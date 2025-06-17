@@ -246,7 +246,6 @@
       const seconds = String(elapsed % 60).padStart(2, '0');
       timerDisplay.textContent = `${minutes}:${seconds}`;
 
-      // 딸기 지급 (45초마다 10개)
       if (elapsed > 0 && elapsed % 45 === 0 && !paused) {
         strawberries += 10;
         strawberryCountDisplay.textContent = `🍓: ${strawberries}`;
@@ -258,23 +257,25 @@
       return elapsed;
     }
 
-    // 캐릭터 이동 (x축, y축 제한)
-    function moveCharacter(x, y) {
-      const boundedX = Math.min(Math.max(x, 0), window.innerWidth);
-      const boundedY = Math.min(Math.max(y, 0), window.innerHeight);
-      player.style.left = `${boundedX - player.offsetWidth / 2}px`;
-      player.style.top = `${boundedY - player.offsetHeight / 2}px`;
-    }
+function moveCharacter(x) {
+  const boundedX = Math.min(Math.max(x, 0), window.innerWidth - player.offsetWidth);
+  const fixedY = window.innerHeight - player.offsetHeight - 10; // 아래서 10px 띄우기 여유
+  player.style.left = `${boundedX}px`;
+  player.style.top = `${fixedY}px`;
+}
 
-    document.addEventListener("mousemove", (e) => {
-      if (gameRunning) moveCharacter(e.clientX, e.clientY);
-    });
+document.addEventListener("mousemove", (e) => {
+  if (gameRunning) moveCharacter(e.clientX);
+});
 
-    document.addEventListener("touchmove", (e) => {
-      if (gameRunning && e.touches.length > 0) {
-        moveCharacter(e.touches[0].clientX, e.touches[0].clientY);
-      }
-    }, { passive: false });
+document.addEventListener("touchmove", (e) => {
+  if (gameRunning && e.touches.length > 0) {
+    moveCharacter(e.touches[0].clientX);
+  }
+}, { passive: false });
+
+moveCharacter(window.innerWidth / 2);
+
 
     // 게임 종료 함수
     function endGame() {
