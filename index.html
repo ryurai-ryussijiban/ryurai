@@ -2,164 +2,178 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>딸기를 피해라!</title>
   <style>
     body {
       margin: 0;
-      padding: 0;
-      background: pink;
       overflow: hidden;
-      font-family: 'Arial', sans-serif;
+      background-color: #ffe0f0;
+      font-family: "Arial", sans-serif;
     }
-    #gameCanvas {
-      position: absolute;
-      top: 0;
-      left: 0;
+
+    #game {
+      position: relative;
       width: 100vw;
       height: 100vh;
-      background-color: #ffe4f2;
     }
-    #gameOver {
+
+    .character {
+      position: absolute;
+      font-size: 40px;
+      pointer-events: none;
+      transition: transform 0.05s linear;
+    }
+
+    .falling {
+      position: absolute;
+      font-size: 32px;
+      animation: fall linear;
+    }
+
+    @keyframes fall {
+      from {
+        top: -50px;
+      }
+      to {
+        top: 100vh;
+      }
+    }
+
+    #timer {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      font-size: 18px;
+      background: #fff0f7;
+      padding: 6px 12px;
+      border-radius: 12px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+    }
+
+    #game-over {
       position: absolute;
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
+      font-size: 28px;
+      color: #ff4d88;
       background: white;
-      padding: 30px;
-      border-radius: 10px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.3);
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.3);
       display: none;
       text-align: center;
-    }
-    #gameOver button {
-      margin-top: 10px;
-      padding: 10px 20px;
-      background: hotpink;
-      border: none;
-      color: white;
-      font-size: 16px;
-      border-radius: 5px;
     }
   </style>
 </head>
 <body>
-  <canvas id="gameCanvas"></canvas>
-  <div id="gameOver">
-    <h2>💀 GAME OVER 💀</h2>
-    <p id="timeRecord"></p>
-    <button onclick="startGame()">다시 시작</button>
+  <div id="game">
+    <div id="timer">00:00</div>
+    <div id="player" class="character">👩🏻‍🍳</div>
+    <div id="game-over"></div>
   </div>
+
   <script>
-    const canvas = document.getElementById("gameCanvas");
-    const ctx = canvas.getContext("2d");
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
+    const game = document.getElementById("game");
+    const player = document.getElementById("player");
+    const gameOverText = document.getElementById("game-over");
+    const timerDisplay = document.getElementById("timer");
 
-    const player = {
-      x: canvas.width / 2,
-      y: canvas.height - 60,
-      size: 50,
-      speed: 12,
-      isInvincible: false,
-    };
+    let startTime = Date.now();
+    let gameRunning = true;
+    let invincible = false;
+    let fallSpeed = 4;
+    let objectInterval;
+    let timerInterval;
 
-    let fruits = [];
-    let gameOver = false;
-    let speed = 4;
-    let timer = 0;
-    let interval;
-
-    const gameOverDiv = document.getElementById("gameOver");
-    const timeRecord = document.getElementById("timeRecord");
-
-    function drawPlayer() {
-      ctx.font = `${player.size}px Arial`;
-      ctx.textAlign = "center";
-      ctx.fillText("👩🏻‍🍳", player.x, player.y);
+    function updateTimer() {
+      const elapsed = Math.floor((Date.now() - startTime) / 1000);
+      const minutes = String(Math.floor(elapsed / 60)).padStart(2, '0');
+      const seconds = String(elapsed % 60).padStart(2, '0');
+      timerDisplay.textContent = `${minutes}:${seconds}`;
+      return elapsed;
     }
 
-    function drawFruits() {
-      fruits.forEach((fruit) => {
-        ctx.font = "40px Arial";
-        ctx.fillText(fruit.type, fruit.x, fruit.y);
-      });
+    function moveCharacter(x, y) {
+      player.style.left = `${x - player.offsetWidth / 2}px`;
+      player.style.top = `${y - player.offsetHeight / 2}px`;
     }
 
-    function updateFruits() {
-      fruits.forEach((fruit) => (fruit.y += speed));
-      fruits = fruits.filter((fruit) => fruit.y < canvas.height + 40);
-    }
+    document.addEventListener("mousemove", (e) => {
+      if (gameRunning) moveCharacter(e.clientX, e.clientY);
+    });
 
-    function createFruit() {
-      const x = Math.random() * (canvas.width - 40) + 20;
-      const isWatermelon = Math.random() < Math.random() * 0.35 + 0.15;
-      const type = isWatermelon ? "🍉" : "🍓";
-      fruits.push({ x, y: -40, type });
-    }
+    document.addEventListener("touchmove", (e) => {
+      if (gameRunning) {
+        const touch = e.touches[0];
+        moveCharacter(touch.clientX, touch.clientY);
+      }
+    });
 
-    function detectCollision() {
-      fruits.forEach((fruit) => {
-        const dist = Math.abs(fruit.x - player.x);
-        const yDist = Math.abs(fruit.y - player.y);
-        if (dist < 30 && yDist < 30) {
-          if (fruit.type === "🍓" && !player.isInvincible) {
+    function createObject() {
+      const obj = document.createElement("div");
+      obj.className = "falling";
+
+      const isWatermelon = Math.random() < (Math.random() * 0.05 + 0.05); // 5~10%
+      obj.textContent = isWatermelon ? "🍉" : "🍓";
+      obj.style.left = `${Math.random() * window.innerWidth}px`;
+      obj.style.animationDuration = `${6 - Math.min(5, fallSpeed)}s`;
+
+      game.appendChild(obj);
+
+      const fallCheck = setInterval(() => {
+        if (!gameRunning) return clearInterval(fallCheck);
+
+        const objRect = obj.getBoundingClientRect();
+        const playerRect = player.getBoundingClientRect();
+
+        const hit =
+          objRect.left < playerRect.right &&
+          objRect.right > playerRect.left &&
+          objRect.top < playerRect.bottom &&
+          objRect.bottom > playerRect.top;
+
+        if (hit) {
+          if (obj.textContent === "🍉") {
+            invincible = true;
+            obj.remove();
+            setTimeout(() => (invincible = false), 5000);
+          } else if (!invincible) {
             endGame();
-          } else if (fruit.type === "🍉") {
-            player.isInvincible = true;
-            setTimeout(() => player.isInvincible = false, 5000);
           }
         }
-      });
-    }
 
-    function draw() {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      drawPlayer();
-      drawFruits();
-    }
-
-    function update() {
-      if (!gameOver) {
-        updateFruits();
-        detectCollision();
-        draw();
-        requestAnimationFrame(update);
-      }
-    }
-
-    function gameLoop() {
-      createFruit();
-      timer += 1;
-      speed += 0.02;
-    }
-
-    function startGame() {
-      player.x = canvas.width / 2;
-      fruits = [];
-      speed = 4;
-      timer = 0;
-      gameOver = false;
-      gameOverDiv.style.display = "none";
-      interval = setInterval(gameLoop, 200);
-      update();
+        if (objRect.top > window.innerHeight) {
+          obj.remove();
+          clearInterval(fallCheck);
+        }
+      }, 30);
     }
 
     function endGame() {
-      gameOver = true;
-      clearInterval(interval);
-      timeRecord.textContent = `생존 시간: ${(timer / 5).toFixed(1)}초`;
-      gameOverDiv.style.display = "block";
+      gameRunning = false;
+      clearInterval(objectInterval);
+      clearInterval(timerInterval);
+      const finalTime = updateTimer();
+      gameOverText.innerHTML = `게임 오버!<br>생존 시간: ${finalTime}초`;
+      gameOverText.style.display = "block";
     }
 
-    function movePlayer(e) {
-      const isTouch = e.type.includes("touch");
-      const x = isTouch ? e.touches[0].clientX : e.clientX;
-      player.x = x;
-    }
+    function startGame() {
+      moveCharacter(window.innerWidth / 2, window.innerHeight - 100);
+      startTime = Date.now();
+      gameRunning = true;
+      gameOverText.style.display = "none";
+      invincible = false;
+      fallSpeed = 4;
 
-    window.addEventListener("mousemove", movePlayer);
-    window.addEventListener("touchmove", movePlayer);
+      objectInterval = setInterval(() => {
+        createObject();
+        fallSpeed += 0.02;
+      }, 800);
+
+      timerInterval = setInterval(updateTimer, 1000);
+    }
 
     startGame();
   </script>
