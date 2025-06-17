@@ -1,905 +1,115 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>류라이 팬사이트</title>
-<style>
-  /* 기본 스타일, 레이아웃 */
-  body, html { margin:0; padding:0; font-family: 'Noto Sans KR', sans-serif; background:#fff0f6; color:#333;}
-  header { background:#f8bbd0; color:#fff; padding:15px; font-size:1.4rem; font-weight:bold; text-align:center; position:relative;}
-  #notice { font-size:0.9rem; background:#f48fb1; color:#fff; padding:5px 10px; margin-top:5px; }
-  main { padding:10px; min-height:calc(100vh - 130px);}
-  nav { position:fixed; bottom:0; left:0; width:100%; background:#f8bbd0; display:flex; justify-content:space-around; border-top:2px solid #f06292; }
-  nav button { background:none; border:none; padding:10px 0; flex:1; color:#fff; font-weight:600; font-size:1rem; cursor:pointer;}
-  nav button.active { background:#f06292; }
+  <meta charset="UTF-8">
+  <title>🍓 딸기를 피해라! 🍓 - 라이언니 팬게임</title>
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      background: pink;
+      font-family: sans-serif;
+    }
 
-  section { display:none; }
-  section.active { display:block; }
+    #chef {
+      position: absolute;
+      font-size: 40px;
+      transition: transform 0.1s;
+      user-select: none;
+      pointer-events: none;
+    }
 
-  /* 프로필 탭 */
-  #profile img#profile-img { width:120px; height:120px; border-radius:50%; object-fit:cover; border:3px solid #f06292; margin-bottom:10px; cursor:pointer;}
-  #profile input[type="file"] { display:none; }
-  #profile label#upload-label { display:inline-block; background:#f48fb1; color:#fff; padding:5px 12px; border-radius:8px; cursor:pointer; margin-bottom:10px; }
-  #profile input, #profile textarea { width:100%; padding:8px; border:1px solid #f48fb1; border-radius:5px; margin-bottom:10px; font-size:1rem; }
-  #profile textarea { resize:none; height:60px; }
-  #profile button { background:#f06292; color:#fff; border:none; padding:8px 12px; border-radius:8px; cursor:pointer; margin-right:10px;}
-  #profile button.delete { background:#e57373; }
-  #profile .letter { background:#fff; border:1px solid #f48fb1; border-radius:8px; padding:10px; margin-bottom:8px; }
-  #profile .letter .actions { margin-top:5px; }
-  #profile .letter .actions button { font-size:0.8rem; padding:3px 6px; margin-right:5px; border:none; border-radius:4px; cursor:pointer;}
-  #profile .letter .actions button.edit { background:#f48fb1; color:#fff; }
-  #profile .letter .actions button.delete { background:#e57373; color:#fff; }
-  #profile .letter textarea { width:100%; height:50px; font-size:0.9rem; }
+    .strawberry {
+      position: absolute;
+      font-size: 30px;
+      animation: fall linear;
+      user-select: none;
+    }
 
-  /* 홈 탭 */
-  #home .sns-btns a { margin-right:10px; text-decoration:none; color:#fff; background:#f06292; padding:8px 12px; border-radius:8px; font-weight:700; }
-  #home .sns-btns a:hover { background:#f48fb1; }
-  #home #birthday-countdown { font-weight:bold; font-size:1.2rem; margin-bottom:10px; }
-  #home #interview, #home #minigame { background:#fff; border:1px solid #f48fb1; border-radius:8px; padding:10px; color:#a188a6; font-style:italic; margin-top:10px; }
+    @keyframes fall {
+      to {
+        transform: translateY(100vh);
+      }
+    }
 
-  /* 팬 탭 */
-  #fan textarea { width:100%; height:80px; font-size:1rem; margin-bottom:8px; padding:8px; border:1px solid #f48fb1; border-radius:8px; }
-  #fan button { background:#f06292; color:#fff; border:none; padding:8px 12px; border-radius:8px; cursor:pointer; }
-  #fan .letter { background:#fff; border:1px solid #f48fb1; border-radius:8px; padding:10px; margin-bottom:8px; }
-
-  /* 건의 탭 */
-  #suggestions textarea { width:100%; height:80px; font-size:1rem; padding:8px; border:1px solid #f48fb1; border-radius:8px; margin-bottom:8px; }
-  #suggestions input[type=file] { margin-bottom:8px; }
-  #suggestions button { background:#f06292; color:#fff; border:none; padding:8px 12px; border-radius:8px; cursor:pointer; }
-
-  /* 신고 탭 inside 건의 */
-  #reports textarea { width:100%; height:80px; font-size:1rem; padding:8px; border:1px solid #f48fb1; border-radius:8px; margin-bottom:8px; }
-  #reports input[type=file] { margin-bottom:8px; }
-  #reports button { background:#e57373; color:#fff; border:none; padding:8px 12px; border-radius:8px; cursor:pointer; }
-
-  /* 상점 탭 */
-  #shop { font-size:1rem; }
-  #shop ul { list-style:none; padding:0; }
-  #shop ul li { background:#fff; border:1px solid #f48fb1; border-radius:8px; margin-bottom:10px; padding:10px; display:flex; justify-content:space-between; align-items:center; }
-  #shop ul li button { background:#f06292; color:#fff; border:none; padding:6px 12px; border-radius:8px; cursor:pointer; }
-  #shop #strawberry-points { font-weight:bold; margin-bottom:10px; }
-
-  /* 관리자 영역 */
-  #admin-area { background:#fce4ec; border:2px solid #f06292; padding:10px; margin-top:20px; border-radius:8px; }
-  #admin-area h3 { margin-top:0; }
-  #admin-area button { background:#f06292; color:#fff; border:none; padding:6px 12px; border-radius:8px; cursor:pointer; margin-bottom:8px; }
-
-  /* 로그인/회원가입 */
-  #login-signup { max-width:400px; margin:20px auto; padding:20px; background:#fff0f6; border:1px solid #f48fb1; border-radius:12px; }
-  #login-signup h2 { text-align:center; margin-bottom:20px; }
-  #login-signup input { width:100%; padding:10px; margin-bottom:15px; border:1px solid #f48fb1; border-radius:8px; font-size:1rem; }
-  #login-signup button { width:100%; background:#f06292; color:#fff; padding:10px; font-size:1rem; border:none; border-radius:8px; cursor:pointer; }
-  #login-signup p { text-align:center; margin-top:10px; }
-  #login-signup p span { color:#f06292; cursor:pointer; font-weight:bold; }
-
-  /* 프로필 공유 QR & 링크 */
-  #profile-share { margin-bottom:15px; }
-  #profile-share button { background:#f06292; color:#fff; border:none; padding:6px 12px; border-radius:8px; cursor:pointer; margin-right:10px; }
-
-  /* 기타 */
-  .hidden { display:none !important; }
-</style>
+    #game-over {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 48px;
+      font-weight: bold;
+      color: white;
+      display: none;
+      background: rgba(255, 0, 100, 0.7);
+      padding: 30px;
+      border-radius: 20px;
+    }
+  </style>
 </head>
 <body>
+  <div id="chef">👩🏻‍🍳</div>
+  <div id="game-over">GAME OVER</div>
 
-<header>
- 류라이 팬사이트
- <div id="notice" class="hidden"></div>
-</header>
+  <script>
+    const chef = document.getElementById('chef');
+    const gameOverText = document.getElementById('game-over');
 
-<main>
-  <!-- 로그인 및 회원가입 -->
-  <section id="login-section">
-    <div id="login-signup">
-      <h2 id="login-title">로그인</h2>
-      <input type="text" id="login-id" placeholder="아이디 입력" />
-      <input type="password" id="login-pw" placeholder="비밀번호 입력" />
-      <button id="login-btn">로그인</button>
-      <p id="to-signup">계정이 없나요? <span id="show-signup">회원가입</span></p>
-    </div>
-  </section>
+    let gameRunning = true;
+    let speed = 2;
+    let interval = 2000;
 
-  <section id="signup-section" class="hidden">
-    <div id="login-signup">
-      <h2 id="signup-title">회원가입</h2>
-      <input type="text" id="signup-id" placeholder="사용할 아이디" />
-      <input type="password" id="signup-pw" placeholder="비밀번호" />
-      <input type="password" id="signup-pw2" placeholder="비밀번호 확인" />
-      <button id="signup-btn">회원가입</button>
-      <p id="to-login">이미 계정이 있나요? <span id="show-login">로그인</span></p>
-    </div>
-  </section>
-
-  <!-- 사이트 메인 -->
-  <section id="profile" class="hidden">
-    <h2>🌸 프로필</h2>
-    <label id="upload-label" for="profile-upload">프로필 이미지 업로드</label><br />
-    <input type="file" id="profile-upload" accept="image/*" />
-    <br />
-    <img id="profile-img" src="" alt="프로필 이미지" style="display:none;" />
-    <input type="text" id="nickname" placeholder="닉네임" />
-    <textarea id="intro" placeholder="소개글"></textarea>
-    <button id="save-profile">저장</button>
-
-    <h3>📩 편지 관리</h3>
-    <select id="letter-filter">
-      <option value="my">내 편지</option>
-      <option value="all">전체 편지 (관리자만)</option>
-    </select>
-    <div id="letter-list"></div>
-
-    <h3>🔗 프로필 공유</h3>
-    <div id="profile-share">
-      <button id="copy-profile-link">링크 복사</button>
-      <button id="generate-qr">QR 생성</button>
-      <div id="qr-code" style="margin-top:10px;"></div>
-    </div>
-
-    <h3>⏰ 방문 시간</h3>
-    <div id="last-visit">마지막 접속 시간: </div>
-
-    <h3>⚙️ 계정 설정</h3>
-    <button id="logout-btn">로그아웃</button>
-    <button id="delete-account-btn" style="background:#e57373; color:#fff;">탈퇴하기</button>
-  </section>
-
-  <section id="home" class="hidden">
-    <h2>🏠 홈</h2>
-    <div id="birthday-countdown"></div>
-    <div class="sns-btns">
-      <a href="https://www.tiktok.com/@ryuraikj" target="_blank" rel="noopener noreferrer">TikTok</a>
-      <a href="https://www.instagram.com/ryu_rai73/" target="_blank" rel="noopener noreferrer">Instagram</a>
-      <a href="https://www.youtube.com/@rairyu1756" target="_blank" rel="noopener noreferrer">YouTube</a>
-    </div>
-    <p>이메일 주소: <strong>dbalsdud6646@naver.com</strong></p>
-    <h3>류라이 인터뷰</h3>
-    <div id="interview" style="color:#a188a6; font-style:italic;">(인터뷰 개발 중...)</div>
-    <h3>미니게임 &lt;딸기를 피해라!&gt;</h3>
-    <div id="minigame" style="color:#a188a6; font-style:italic;">(미니게임 개발 중...)</div>
-  </section>
-
-  <section id="fan" class="hidden">
-    <h2>💌 팬</h2>
-    <textarea id="fan-letter-content" placeholder="편지 작성 (꾸미기 기능 개발 중)"></textarea>
-    <button id="fan-letter-submit">편지 보내기</button>
-    <div id="fan-letter-list"></div>
-  </section>
-
-  <section id="suggestions" class="hidden">
-    <h2>🛠 건의하기</h2>
-    <textarea id="suggestion-content" placeholder="건의 내용을 작성하세요"></textarea><br />
-    <input type="file" id="suggestion-file" accept="image/*" /><br />
-    <button id="suggestion-submit">건의하기 제출</button>
-
-    <h2>🚨 신고하기</h2>
-    <textarea id="report-content" placeholder="신고 내용을 작성하세요 (사진 첨부 필수)"></textarea><br />
-    <input type="file" id="report-file" accept="image/*" /><br />
-    <button id="report-submit">신고하기 제출</button>
-  </section>
-
-  <section id="shop" class="hidden">
-    <h2>🛍 상점</h2>
-    <div id="strawberry-points">딸기 포인트: 0</div>
-    <ul id="shop-items">
-      <li>
-        편지용 딸기 스티커
-        <button data-item="sticker" class="buy-btn">구매</button>
-      </li>
-      <li>
-        레이스 꾸미기
-        <button data-item="lace" class="buy-btn">구매</button>
-      </li>
-      <li>
-        편지 작성권 +1
-        <button data-item="write-pass" class="buy-btn">구매</button>
-      </li>
-      <li>
-        부활 1회권 (게임 연동)
-        <button data-item="revive" class="buy-btn">구매</button>
-      </li>
-    </ul>
-
-    <div id="admin-area" class="hidden">
-      <h3>👑 관리자 전용</h3>
-      <button id="admin-view-letters">전체 편지 열람</button><br />
-      <button id="admin-view-suggestions">전체 건의 열람</button><br />
-      <button id="admin-view-reports">전체 신고 열람</button><br />
-      <button id="admin-view-users">유저 목록 확인</button><br />
-      <button id="admin-give-strawberry">딸기 포인트 지급</button><br />
-      <button id="admin-post-notice">공지 작성</button><br />
-    </div>
-  </section>
-
-</main>
-
-<nav>
-  <button id="tab-profile" class="active">프로필</button>
-  <button id="tab-home">홈</button>
-  <button id="tab-fan">팬</button>
-  <button id="tab-suggestions">건의</button>
-  <button id="tab-shop">상점</button>
-</nav>
-
-<!-- QR 코드 라이브러리 (간단히 구글 CDN) -->
-<script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
-
-<script>
-(() => {
-  // ====== 데이터 저장 ======
-  const STORAGE_KEYS = {
-    USERS: 'ryu_users',
-    CURRENT_USER: 'ryu_current_user',
-    LETTERS: 'ryu_letters',
-    SUGGESTIONS: 'ryu_suggestions',
-    REPORTS: 'ryu_reports',
-    POINTS: 'ryu_points',
-    NOTICES: 'ryu_notices',
-  };
-
-  // ====== UI 요소 찾기 ======
-  const loginSection = document.getElementById('login-section');
-  const signupSection = document.getElementById('signup-section');
-  const profileSection = document.getElementById('profile');
-  const homeSection = document.getElementById('home');
-  const fanSection = document.getElementById('fan');
-  const suggestionsSection = document.getElementById('suggestions');
-  const shopSection = document.getElementById('shop');
-
-  // ✅ 초기화: 페이지 열었을 때 로그인 화면만 보이게
- window.onload = function () {
-  document.getElementById('login-section').style.display = 'block';
-  document.getElementById('signup-section').style.display = 'none';
-  document.getElementById('profile').style.display = 'none';
-  document.getElementById('home').style.display = 'none';
-  document.getElementById('fan').style.display = 'none';
-  document.getElementById('suggestions').style.display = 'none';
-  document.getElementById('shop').style.display = 'none';
-};
-
-function loginSuccess() {
-  loginSection.style.display = 'none';
-  signupSection.style.display = 'none';
-  showSection('home');  // 로그인 후 홈 화면 보여줌
-}
-
-
-  // 초기 유저 목록 - 매니저/관리자/일반 멤버(가입시 추가)
-  let users = JSON.parse(localStorage.getItem(STORAGE_KEYS.USERS)) || [
-    {id:'manager', password:'managerpass', role:'manager', nickname:'류라이 매니저', intro:'사이트 최고 관리자입니다.', profileImg:'', lastVisit:null, strawberryPoints: 9999},
-    {id:'admin', password:'adminpass', role:'admin', nickname:'류라이 관리자', intro:'사이트 관리자입니다.', profileImg:'', lastVisit:null, strawberryPoints: 100},
-  ];
-
-  // 현재 로그인 유저
-  let currentUser = JSON.parse(localStorage.getItem(STORAGE_KEYS.CURRENT_USER)) || null;
-
-  // 편지, 건의, 신고 저장소
-  let letters = JSON.parse(localStorage.getItem(STORAGE_KEYS.LETTERS)) || [];
-  let suggestions = JSON.parse(localStorage.getItem(STORAGE_KEYS.SUGGESTIONS)) || [];
-  let reports = JSON.parse(localStorage.getItem(STORAGE_KEYS.REPORTS)) || [];
-
-  // 공지사항 (하단 헤더에 표시)
-  let notices = JSON.parse(localStorage.getItem(STORAGE_KEYS.NOTICES)) || [];
-
-  // 딸기 포인트 (사용자별 저장)
-  function saveUsers() {
-    localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(users));
-  }
-  function saveCurrentUser() {
-    localStorage.setItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify(currentUser));
-  }
-  function saveLetters() {
-    localStorage.setItem(STORAGE_KEYS.LETTERS, JSON.stringify(letters));
-  }
-  function saveSuggestions() {
-    localStorage.setItem(STORAGE_KEYS.SUGGESTIONS, JSON.stringify(suggestions));
-  }
-  function saveReports() {
-    localStorage.setItem(STORAGE_KEYS.REPORTS, JSON.stringify(reports));
-  }
-  function saveNotices() {
-    localStorage.setItem(STORAGE_KEYS.NOTICES, JSON.stringify(notices));
-  }
-
-  // ====== UI 요소 ======
-  const loginSection = document.getElementById('login-section');
-  const signupSection = document.getElementById('signup-section');
-  const profileSection = document.getElementById('profile');
-  const homeSection = document.getElementById('home');
-  const fanSection = document.getElementById('fan');
-  const suggestionsSection = document.getElementById('suggestions');
-  const shopSection = document.getElementById('shop');
-
-  const navButtons = {
-    profile: document.getElementById('tab-profile'),
-    home: document.getElementById('tab-home'),
-    fan: document.getElementById('tab-fan'),
-    suggestions: document.getElementById('tab-suggestions'),
-    shop: document.getElementById('tab-shop'),
-  };
-
-  // 로그인 UI
-  const loginTitle = document.getElementById('login-title');
-  const loginIdInput = document.getElementById('login-id');
-  const loginPwInput = document.getElementById('login-pw');
-  const loginBtn = document.getElementById('login-btn');
-  const toSignupBtn = document.getElementById('to-signup-btn');
-
-  // 회원가입 UI
-  const signupIdInput = document.getElementById('signup-id');
-  const signupPwInput = document.getElementById('signup-pw');
-  const signupBtn = document.getElementById('signup-btn');
-  const toLoginBtn = document.getElementById('to-login-btn');
-
-  // 프로필 탭 UI
-  const profileUploadInput = document.getElementById('profile-upload');
-  const profileImg = document.getElementById('profile-img');
-  const nicknameInput = document.getElementById('nickname');
-  const introInput = document.getElementById('intro');
-  const saveProfileBtn = document.getElementById('save-profile');
-
-  // 편지 관리
-  const letterFilter = document.getElementById('letter-filter');
-  const letterList = document.getElementById('letter-list');
-
-  // 프로필 공유
-  const copyProfileLinkBtn = document.getElementById('copy-profile-link');
-  const generateQRBtn = document.getElementById('generate-qr');
-  const qrCodeDiv = document.getElementById('qr-code');
-
-  // 방문 시간
-  const lastVisitDiv = document.getElementById('last-visit');
-
-  // 계정 설정
-  const logoutBtn = document.getElementById('logout-btn');
-  const deleteAccountBtn = document.getElementById('delete-account-btn');
-
-  // 홈 탭 UI
-  const birthdayCountdownDiv = document.getElementById('birthday-countdown');
-  const interviewDiv = document.getElementById('interview');
-  const minigameDiv = document.getElementById('minigame');
-
-  // 팬 탭 UI
-  const fanLetterContent = document.getElementById('fan-letter-content');
-  const fanLetterSubmit = document.getElementById('fan-letter-submit');
-  const fanLetterList = document.getElementById('fan-letter-list');
-
-  // 건의 탭 UI
-  const suggestionContent = document.getElementById('suggestion-content');
-  const suggestionFile = document.getElementById('suggestion-file');
-  const suggestionSubmit = document.getElementById('suggestion-submit');
-  const reportContent = document.getElementById('report-content');
-  const reportFile = document.getElementById('report-file');
-  const reportSubmit = document.getElementById('report-submit');
-
-  // 상점 탭 UI
-  const strawberryPointsDiv = document.getElementById('strawberry-points');
-  const shopItemsList = document.getElementById('shop-items');
-  const adminArea = document.getElementById('admin-area');
-
-  // 관리자 전용 버튼
-  const adminViewLettersBtn = document.getElementById('admin-view-letters');
-  const adminViewSuggestionsBtn = document.getElementById('admin-view-suggestions');
-  const adminViewReportsBtn = document.getElementById('admin-view-reports');
-  const adminViewUsersBtn = document.getElementById('admin-view-users');
-  const adminGiveStrawberryBtn = document.getElementById('admin-give-strawberry');
-  const adminPostNoticeBtn = document.getElementById('admin-post-notice');
-
-  // ====== 함수 ======
-
-  // 로그인 상태 UI 설정
-  function setLoginUI() {
-    if (currentUser) {
-      loginSection.classList.add('hidden');
-      signupSection.classList.add('hidden');
-      showSection('profile');
-      updateLastVisit();
-      loadProfile();
-      updateStrawberryPoints();
-      checkAdminAccess();
-    } else {
-      loginSection.classList.remove('hidden');
-      signupSection.classList.add('hidden');
-      profileSection.classList.add('hidden');
-      homeSection.classList.add('hidden');
-      fanSection.classList.add('hidden');
-      suggestionsSection.classList.add('hidden');
-      shopSection.classList.add('hidden');
+    function moveChef(x, y) {
+      chef.style.left = `${x - 20}px`;
+      chef.style.top = `${y - 20}px`;
     }
-  }
 
-function hideAllSections() {
-  profileSection.style.display = 'none';
-  homeSection.style.display = 'none';
-  fanSection.style.display = 'none';
-  suggestionsSection.style.display = 'none';
-  shopSection.style.display = 'none';
-}
-function showSection(name) {
-  hideAllSections();
-  if (name === 'profile') profileSection.style.display = 'block';
-  else if (name === 'home') homeSection.style.display = 'block';
-  else if (name === 'fan') fanSection.style.display = 'block';
-  else if (name === 'suggestions') suggestionsSection.style.display = 'block';
-  else if (name === 'shop') shopSection.style.display = 'block';
-}
-
-navButtons.profile.addEventListener('click', () => showSection('profile'));
-navButtons.home.addEventListener('click', () => showSection('home'));
-navButtons.fan.addEventListener('click', () => showSection('fan'));
-navButtons.suggestions.addEventListener('click', () => showSection('suggestions'));
-navButtons.shop.addEventListener('click', () => showSection('shop'));
-
-  // 탭 표시 전환
-  function showSection(section) {
-    profileSection.classList.add('hidden');
-    homeSection.classList.add('hidden');
-    fanSection.classList.add('hidden');
-    suggestionsSection.classList.add('hidden');
-    shopSection.classList.add('hidden');
-    navButtons.profile.classList.remove('active');
-    navButtons.home.classList.remove('active');
-    navButtons.fan.classList.remove('active');
-    navButtons.suggestions.classList.remove('active');
-    navButtons.shop.classList.remove('active');
-
-    switch (section) {
-      case 'profile': profileSection.classList.remove('hidden'); navButtons.profile.classList.add('active'); break;
-      case 'home': homeSection.classList.remove('hidden'); navButtons.home.classList.add('active'); break;
-      case 'fan': fanSection.classList.remove('hidden'); navButtons.fan.classList.add('active'); break;
-      case 'suggestions': suggestionsSection.classList.remove('hidden'); navButtons.suggestions.classList.add('active'); break;
-      case 'shop': shopSection.classList.remove('hidden'); navButtons.shop.classList.add('active'); break;
-    }
-  }
-
-  // 닉네임, 소개글, 프로필 이미지 로드
-  function loadProfile() {
-    if (!currentUser) return;
-    nicknameInput.value = currentUser.nickname || '';
-    introInput.value = currentUser.intro || '';
-    if (currentUser.profileImg) {
-      profileImg.src = currentUser.profileImg;
-      profileImg.style.display = 'block';
-    } else {
-      profileImg.style.display = 'none';
-    }
-  }
-
-  // 프로필 저장
-  saveProfileBtn.addEventListener('click', () => {
-    if (!currentUser) return alert('로그인이 필요합니다.');
-    currentUser.nickname = nicknameInput.value.trim();
-    currentUser.intro = introInput.value.trim();
-    saveUsers();
-    saveCurrentUser();
-    alert('프로필이 저장되었습니다.');
-  });
-
-  // 프로필 이미지 업로드
-  profileUploadInput.addEventListener('change', (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => {
-      if (!currentUser) return;
-      currentUser.profileImg = reader.result;
-      profileImg.src = reader.result;
-      profileImg.style.display = 'block';
-      saveUsers();
-      saveCurrentUser();
-    };
-    reader.readAsDataURL(file);
-  });
-
-  // 편지 필터 변경 및 리스트 로드
-  letterFilter.addEventListener('change', () => {
-    loadLetters();
-  });
-
-  // 편지 로드
-  function loadLetters() {
-    letterList.innerHTML = '';
-    if (!currentUser) return;
-    const filter = letterFilter.value;
-    let filteredLetters = [];
-    if (filter === 'my') {
-      filteredLetters = letters.filter(l => l.authorId === currentUser.id);
-    } else if (filter === 'all') {
-      if (currentUser.role === 'admin' || currentUser.role === 'manager') {
-        filteredLetters = letters;
-      } else {
-        alert('전체 편지 열람 권한이 없습니다.');
-        letterFilter.value = 'my';
-        filteredLetters = letters.filter(l => l.authorId === currentUser.id);
-      }
-    }
-    if (filteredLetters.length === 0) {
-      letterList.innerHTML = '<p>편지가 없습니다.</p>';
-      return;
-    }
-    filteredLetters.forEach(letter => {
-      const letterDiv = document.createElement('div');
-      letterDiv.className = 'letter-item';
-      letterDiv.textContent = `[${letter.authorNickname}] ${letter.content}`;
-      // 본인 편지면 수정, 삭제 버튼
-      if (letter.authorId === currentUser.id) {
-        const editBtn = document.createElement('button');
-        editBtn.textContent = '수정';
-        editBtn.style.marginLeft = '5px';
-        editBtn.onclick = () => {
-          const newContent = prompt('편지 내용을 수정하세요:', letter.content);
-          if (newContent !== null) {
-            letter.content = newContent.trim();
-            saveLetters();
-            loadLetters();
-          }
-        };
-        const deleteBtn = document.createElement('button');
-        deleteBtn.textContent = '삭제';
-        deleteBtn.style.marginLeft = '5px';
-        deleteBtn.onclick = () => {
-          if (confirm('정말 삭제하시겠습니까?')) {
-            letters = letters.filter(l => l.id !== letter.id);
-            saveLetters();
-            loadLetters();
-          }
-        };
-        letterDiv.appendChild(editBtn);
-        letterDiv.appendChild(deleteBtn);
-      }
-      letterList.appendChild(letterDiv);
+    document.addEventListener('mousemove', (e) => moveChef(e.clientX, e.clientY));
+    document.addEventListener('touchmove', (e) => {
+      const touch = e.touches[0];
+      moveChef(touch.clientX, touch.clientY);
     });
-  }
 
-  // 프로필 공유 - 링크 복사
-  copyProfileLinkBtn.addEventListener('click', () => {
-    if (!currentUser) return;
-    const profileLink = location.href + '?user=' + encodeURIComponent(currentUser.id);
-    navigator.clipboard.writeText(profileLink).then(() => {
-      alert('프로필 링크가 복사되었습니다.');
-    });
-  });
+    function createStrawberry() {
+      const strawberry = document.createElement('div');
+      strawberry.className = 'strawberry';
+      strawberry.textContent = '🍓';
+      strawberry.style.left = `${Math.random() * window.innerWidth}px`;
+      strawberry.style.top = '-40px';
+      strawberry.style.animationDuration = `${6 - speed}s`;
+      document.body.appendChild(strawberry);
 
-  // 프로필 공유 - QR 코드 생성
-  generateQRBtn.addEventListener('click', () => {
-    if (!currentUser) return;
-    const profileLink = location.href + '?user=' + encodeURIComponent(currentUser.id);
-    qrCodeDiv.innerHTML = '';
-    QRCode.toCanvas(profileLink, {width: 128}, (error, canvas) => {
-      if (error) {
-        alert('QR 코드 생성 실패');
-        return;
-      }
-      qrCodeDiv.appendChild(canvas);
-    });
-  });
+      const checkInterval = setInterval(() => {
+        const rect1 = chef.getBoundingClientRect();
+        const rect2 = strawberry.getBoundingClientRect();
 
-  // 방문 시간 업데이트
-  function updateLastVisit() {
-    if (!currentUser) return;
-    currentUser.lastVisit = new Date().toISOString();
-    saveUsers();
-    saveCurrentUser();
-    lastVisitDiv.textContent = '마지막 접속 시간: ' + new Date(currentUser.lastVisit).toLocaleString();
-  }
+        if (
+          rect1.left < rect2.right &&
+          rect1.right > rect2.left &&
+          rect1.top < rect2.bottom &&
+          rect1.bottom > rect2.top
+        ) {
+          gameRunning = false;
+          gameOverText.style.display = 'block';
+          clearInterval(checkInterval);
+        }
 
-  // 로그아웃
-  logoutBtn.addEventListener('click', () => {
-    currentUser = null;
-    saveCurrentUser();
-    alert('로그아웃 되었습니다.');
-    setLoginUI();
-  });
-
-  // 탈퇴하기
-  deleteAccountBtn.addEventListener('click', () => {
-    if (!currentUser) return;
-    if (!confirm('정말 탈퇴하시겠습니까? 계정과 모든 데이터가 삭제됩니다.')) return;
-    // 관리자나 매니저 탈퇴 불가
-    if (currentUser.role === 'manager') {
-      alert('매니저 계정은 탈퇴할 수 없습니다.');
-      return;
+        if (rect2.top > window.innerHeight) {
+          strawberry.remove();
+          clearInterval(checkInterval);
+        }
+      }, 20);
     }
-    if (currentUser.role === 'admin') {
-      alert('관리자 계정은 탈퇴할 수 없습니다.');
-      return;
+
+    function gameLoop() {
+      if (!gameRunning) return;
+      createStrawberry();
+      setTimeout(gameLoop, interval);
+      if (interval > 500) interval -= 50;
+      if (speed < 5) speed += 0.05;
     }
-    // 회원 정보 삭제
-    users = users.filter(u => u.id !== currentUser.id);
-    // 관련 편지 삭제
-    letters = letters.filter(l => l.authorId !== currentUser.id);
-    saveLetters();
-    saveUsers();
-    currentUser = null;
-    saveCurrentUser();
-    alert('탈퇴 처리되었습니다.');
-    setLoginUI();
-  });
 
-  // 홈 탭 - 생일 디데이 계산
-  function updateBirthdayCountdown() {
-    const now = new Date();
-    const year = now.getFullYear();
-    let birthday = new Date(year, 8, 16); // 9월 16일 (0-based 월)
-    if (birthday < now) birthday.setFullYear(year + 1);
-    const diff = birthday - now;
-    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-    birthdayCountdownDiv.textContent = `류라이 생일까지 ${days}일 남았습니다! 🎉`;
-  }
-
-  setInterval(updateBirthdayCountdown, 1000 * 60);
-  updateBirthdayCountdown();
-
-  // 팬 탭 - 편지 작성
-  fanLetterSubmit.addEventListener('click', () => {
-    if (!currentUser) return alert('로그인이 필요합니다.');
-    const content = fanLetterContent.value.trim();
-    if (!content) return alert('내용을 입력하세요.');
-    const newLetter = {
-      id: 'letter_' + Date.now(),
-      authorId: currentUser.id,
-      authorNickname: currentUser.nickname || currentUser.id,
-      content,
-      date: new Date().toISOString(),
-    };
-    letters.push(newLetter);
-    saveLetters();
-    fanLetterContent.value = '';
-    alert('편지가 등록되었습니다.');
-    loadFanLetters();
-  });
-
-  // 팬 편지 로드 (관리자/매니저는 전체 편지)
-  function loadFanLetters() {
-    fanLetterList.innerHTML = '';
-    if (!currentUser) return;
-    let displayLetters = [];
-    if (currentUser.role === 'admin' || currentUser.role === 'manager') {
-      displayLetters = letters;
-    } else {
-      displayLetters = letters.filter(l => l.authorId === currentUser.id);
-    }
-    if (displayLetters.length === 0) {
-      fanLetterList.innerHTML = '<p>편지가 없습니다.</p>';
-      return;
-    }
-    displayLetters.forEach(letter => {
-      const div = document.createElement('div');
-      div.textContent = `[${letter.authorNickname}] ${letter.content}`;
-      fanLetterList.appendChild(div);
-    });
-  }
-
-  // 건의하기 제출
-  suggestionSubmit.addEventListener('click', () => {
-    if (!currentUser) return alert('로그인이 필요합니다.');
-    const content = suggestionContent.value.trim();
-    if (!content) return alert('내용을 입력하세요.');
-    let imgData = null;
-    const file = suggestionFile.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = () => {
-        imgData = reader.result;
-        addSuggestion(content, imgData);
-      };
-      reader.readAsDataURL(file);
-    } else {
-      addSuggestion(content, null);
-    }
-  });
-
-  function addSuggestion(content, imgData) {
-    const newSuggestion = {
-      id: 'suggestion_' + Date.now(),
-      authorId: currentUser.id,
-      authorNickname: currentUser.nickname || currentUser.id,
-      content,
-      imgData,
-      date: new Date().toISOString(),
-    };
-    suggestions.push(newSuggestion);
-    saveSuggestions();
-    suggestionContent.value = '';
-    suggestionFile.value = '';
-    alert('건의가 제출되었습니다.');
-  }
-
-  // 신고하기 제출
-  reportSubmit.addEventListener('click', () => {
-    if (!currentUser) return alert('로그인이 필요합니다.');
-    const content = reportContent.value.trim();
-    if (!content) return alert('내용을 입력하세요.');
-    const file = reportFile.files[0];
-    if (!file) return alert('증빙 파일을 첨부하세요.');
-    const reader = new FileReader();
-    reader.onload = () => {
-      const imgData = reader.result;
-      addReport(content, imgData);
-    };
-    reader.readAsDataURL(file);
-  });
-
-  function addReport(content, imgData) {
-    const newReport = {
-      id: 'report_' + Date.now(),
-      authorId: currentUser.id,
-      authorNickname: currentUser.nickname || currentUser.id,
-      content,
-      imgData,
-      date: new Date().toISOString(),
-    };
-    reports.push(newReport);
-    saveReports();
-    reportContent.value = '';
-    reportFile.value = '';
-    alert('신고가 제출되었습니다.');
-  }
-
-  // 상점 탭 - 딸기 포인트 업데이트
-  function updateStrawberryPoints() {
-    if (!currentUser) return;
-    strawberryPointsDiv.textContent = `딸기 포인트: ${currentUser.strawberryPoints || 0}`;
-  }
-
-  // 관리자 권한 체크
-  function checkAdminAccess() {
-    if (!currentUser) return;
-    if (currentUser.role === 'admin' || currentUser.role === 'manager') {
-      adminArea.style.display = 'block';
-    } else {
-      adminArea.style.display = 'none';
-    }
-  }
-
-  // ====== 초기화 ======
-
-  // 로컬스토리지에서 데이터 불러오기
-  function loadUsers() {
-    const data = localStorage.getItem('users');
-    if (data) users = JSON.parse(data);
-  }
-  function loadLetters() {
-    const data = localStorage.getItem('letters');
-    if (data) letters = JSON.parse(data);
-  }
-  function loadSuggestions() {
-    const data = localStorage.getItem('suggestions');
-    if (data) suggestions = JSON.parse(data);
-  }
-  function loadReports() {
-    const data = localStorage.getItem('reports');
-    if (data) reports = JSON.parse(data);
-  }
-  function loadCurrentUser() {
-    const data = localStorage.getItem('currentUser');
-    if (data) currentUser = JSON.parse(data);
-  }
-
-  // 로컬스토리지 저장
-  function saveUsers() {
-    localStorage.setItem('users', JSON.stringify(users));
-  }
-  function saveLetters() {
-    localStorage.setItem('letters', JSON.stringify(letters));
-  }
-  function saveSuggestions() {
-    localStorage.setItem('suggestions', JSON.stringify(suggestions));
-  }
-  function saveReports() {
-    localStorage.setItem('reports', JSON.stringify(reports));
-  }
-  function saveCurrentUser() {
-    if (currentUser) {
-      localStorage.setItem('currentUser', JSON.stringify(currentUser));
-    } else {
-      localStorage.removeItem('currentUser');
-    }
-  }
-
-  // 페이지 로드 시 초기화
-  window.addEventListener('load', () => {
-    loadUsers();
-    loadLetters();
-    loadSuggestions();
-    loadReports();
-    loadCurrentUser();
-    setLoginUI();
-    loadLetters();
-    loadFanLetters();
-  });
-
-  // ====== 네비게이션 버튼 이벤트 ======
-
-  navButtons.profile.addEventListener('click', () => showSection('profile'));
-  navButtons.home.addEventListener('click', () => showSection('home'));
-  navButtons.fan.addEventListener('click', () => showSection('fan'));
-  navButtons.suggestions.addEventListener('click', () => showSection('suggestions'));
-  navButtons.shop.addEventListener('click', () => showSection('shop'));
-
-  // 로그인 버튼 이벤트
-  loginBtn.addEventListener('click', () => {
-    const id = loginIdInput.value.trim();
-    const pw = loginPwInput.value.trim();
-    if (!id || !pw) return alert('아이디와 비밀번호를 입력하세요.');
-    const user = users.find(u => u.id === id && u.pw === pw);
-    if (!user) return alert('아이디 또는 비밀번호가 틀렸습니다.');
-    currentUser = user;
-    saveCurrentUser();
-    setLoginUI();
-  });
-
-  // 회원가입 버튼 이벤트
-  toSignupBtn.addEventListener('click', () => {
-    loginSection.classList.add('hidden');
-    signupSection.classList.remove('hidden');
-  });
-
-  signupBtn.addEventListener('click', () => {
-    const id = signupIdInput.value.trim();
-    const pw = signupPwInput.value.trim();
-    if (!id || !pw) return alert('아이디와 비밀번호를 입력하세요.');
-    if (users.find(u => u.id === id)) return alert('이미 존재하는 아이디입니다.');
-    const newUser = {
-      id,
-      pw,
-      nickname: '',
-      intro: '',
-      profileImg: null,
-      role: 'member',
-      strawberryPoints: 0,
-      lastVisit: null,
-    };
-    users.push(newUser);
-    saveUsers();
-    alert('회원가입이 완료되었습니다. 로그인하세요.');
-    signupSection.classList.add('hidden');
-    loginSection.classList.remove('hidden');
-  });
-
-  toLoginBtn.addEventListener('click', () => {
-    signupSection.classList.add('hidden');
-    loginSection.classList.remove('hidden');
-  });
-
-  // 페이지 진입 시 URL 쿼리로 프로필 보여주기 (예: ?user=someId)
-  function showProfileFromQuery() {
-    const params = new URLSearchParams(window.location.search);
-    const userId = params.get('user');
-    if (!userId) return;
-    const user = users.find(u => u.id === userId);
-    if (!user) return;
-    // 프로필 탭으로 이동
-    showSection('profile');
-    // 프로필 정보 표시 (읽기 전용)
-    nicknameInput.value = user.nickname || '';
-    introInput.value = user.intro || '';
-    nicknameInput.disabled = true;
-    introInput.disabled = true;
-    profileUploadInput.disabled = true;
-    saveProfileBtn.disabled = true;
-    if (user.profileImg) {
-      profileImg.src = user.profileImg;
-      profileImg.style.display = 'block';
-    } else {
-      profileImg.style.display = 'none';
-    }
-  }
-  showProfileFromQuery();팬사이트 코드와 동작 설명 잘 정리해주셨네요!  
-현재까지 작성한 코드 구조가 사용자의 로그인/회원가입, 프로필 편집, 편지·건의·신고 작성 및 목록 표시, 그리고 딸기 포인트 표시와 관리자 권한 체크까지 포함되어 있습니다.
-
-몇 가지 추가 제안 및 확인사항 드릴게요.
-
----
-
-### 1. 권한 체크 및 관리자 영역 보이기/숨기기
-
-```js
-function checkAdminAccess() {
-  if (!currentUser) return;
-  if (currentUser.role === 'admin' || currentUser.role === 'manager') {
-    adminArea.style.display = 'block';
-  } else {
-    adminArea.style.display = 'none';
-  }
-}
+    gameLoop();
+  </script>
+</body>
+</html>
