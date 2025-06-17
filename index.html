@@ -48,6 +48,7 @@
       padding: 6px 12px;
       border-radius: 12px;
       box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+      user-select: none;
     }
 
     #game-over {
@@ -63,14 +64,155 @@
       box-shadow: 0 4px 10px rgba(0,0,0,0.3);
       display: none;
       text-align: center;
+      user-select: none;
+    }
+
+    #strawberry-count {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      font-size: 18px;
+      background: #fff0f7;
+      padding: 6px 12px;
+      border-radius: 12px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+      user-select: none;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    #shop-button {
+      position: absolute;
+      bottom: 20px;
+      right: 20px;
+      padding: 10px 16px;
+      background: #ff4d88;
+      color: white;
+      border: none;
+      border-radius: 12px;
+      font-size: 16px;
+      cursor: pointer;
+      user-select: none;
+      box-shadow: 0 3px 8px rgba(255, 77, 136, 0.7);
+      transition: background 0.3s;
+    }
+    #shop-button:hover {
+      background: #e63f78;
+    }
+
+    /* 상점 모달 스타일 */
+    #shop-modal {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+      padding: 20px;
+      width: 90vw;
+      max-width: 500px;
+      max-height: 80vh;
+      overflow-y: auto;
+      display: none;
+      z-index: 1000;
+    }
+    #shop-modal h2 {
+      margin-top: 0;
+      margin-bottom: 12px;
+      text-align: center;
+      color: #ff4d88;
+    }
+    .shop-section {
+      margin-bottom: 20px;
+    }
+    .shop-items {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      justify-content: center;
+    }
+    .shop-item {
+      cursor: pointer;
+      padding: 10px 14px;
+      border-radius: 12px;
+      border: 2px solid transparent;
+      font-size: 30px;
+      user-select: none;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 80px;
+      box-sizing: border-box;
+      transition: border-color 0.3s, background-color 0.3s;
+      position: relative;
+    }
+    .shop-item.selected {
+      border-color: #ff4d88;
+      background-color: #fff0f7;
+    }
+    .shop-item .price {
+      font-size: 14px;
+      color: #888;
+      margin-top: 6px;
+      user-select: none;
+    }
+    .shop-item.disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+    #close-shop {
+      display: block;
+      margin: 0 auto;
+      padding: 8px 18px;
+      font-size: 16px;
+      border: none;
+      background: #ff4d88;
+      color: white;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: background 0.3s;
+      user-select: none;
+    }
+    #close-shop:hover {
+      background: #e63f78;
+    }
+
+    /* 딸기 아이콘 표시 */
+    #strawberry-count span {
+      font-size: 24px;
+      user-select: none;
     }
   </style>
 </head>
 <body>
   <div id="game">
     <div id="timer">00:00</div>
+    <div id="strawberry-count">🍓 <span id="strawberry-num">0</span></div>
     <div id="player" class="character">👩🏻‍🍳</div>
     <div id="game-over"></div>
+    <button id="shop-button" type="button">상점</button>
+  </div>
+
+  <div id="shop-modal" role="dialog" aria-modal="true" aria-labelledby="shop-title">
+    <h2 id="shop-title">상점</h2>
+
+    <div class="shop-section" id="icon-shop">
+      <h3>아이콘</h3>
+      <div class="shop-items" id="icon-items">
+        <!-- 아이콘 아이템 동적 생성 -->
+      </div>
+    </div>
+
+    <div class="shop-section" id="character-shop">
+      <h3>캐릭터</h3>
+      <div class="shop-items" id="character-items">
+        <!-- 캐릭터 아이템 동적 생성 -->
+      </div>
+    </div>
+
+    <button id="close-shop" type="button">닫기</button>
   </div>
 
   <script>
@@ -78,6 +220,28 @@
     const player = document.getElementById("player");
     const gameOverText = document.getElementById("game-over");
     const timerDisplay = document.getElementById("timer");
+    const strawberryCount = document.getElementById("strawberry-num");
+    const shopButton = document.getElementById("shop-button");
+    const shopModal = document.getElementById("shop-modal");
+    const closeShopBtn = document.getElementById("close-shop");
+
+    const iconItemsData = [
+      {icon: "🍓", name: "기본", price: 0},
+      {icon: "🍜", name: "🍜", price: 30},
+      {icon: "🍦", name: "🍦", price: 50},
+      {icon: "🍭", name: "🍭", price: 100},
+    ];
+
+    const characterItemsData = [
+      {icon: "👩🏻‍🍳", name: "기본", price: 0},
+      {icon: "👨🏻‍🍳", name: "👨🏻‍🍳", price: 0},
+      {icon: "👩🏻‍🔬", name: "👩🏻‍🔬", price: 30},
+      {icon: "👨🏻‍🔬", name: "👨🏻‍🔬", price: 30},
+      {icon: "👮🏻‍♀️", name: "👮🏻‍♀️", price: 50},
+      {icon: "👮🏻‍♂️", name: "👮🏻‍♂️", price: 50},
+      {icon: "👩🏻‍🎓", name: "👩🏻‍🎓", price: 100},
+      {icon: "👨🏻‍🎓", name: "👨🏻‍🎓", price: 100},
+    ];
 
     let startTime = Date.now();
     let gameRunning = true;
@@ -86,12 +250,36 @@
     let objectInterval;
     let timerInterval;
 
+    // 플레이어 선택 아이템 저장 및 로드
+    let playerIcon = localStorage.getItem("playerIcon") || "🍓";
+    let playerCharacter = localStorage.getItem("playerCharacter") || "👩🏻‍🍳";
+
+    // 딸기 개수 저장 및 로드
+    let strawberry = parseInt(localStorage.getItem("strawberry")) || 0;
+
+    // 현재 시간 기준 딸기 지급 체크용
+    let lastRewardTime = 0;
+
     function updateTimer() {
+      if (!gameRunning) return;
       const elapsed = Math.floor((Date.now() - startTime) / 1000);
       const minutes = String(Math.floor(elapsed / 60)).padStart(2, '0');
       const seconds = String(elapsed % 60).padStart(2, '0');
       timerDisplay.textContent = `${minutes}:${seconds}`;
+
+      // 45초마다 딸기 10개 지급
+      if (elapsed > 0 && elapsed % 45 === 0 && elapsed !== lastRewardTime) {
+        strawberry += 10;
+        saveStrawberry();
+        lastRewardTime = elapsed;
+        updateStrawberryCount();
+      }
       return elapsed;
+    }
+
+    function updateStrawberryCount() {
+      strawberryCount.textContent = strawberry;
+      localStorage.setItem("strawberry", strawberry);
     }
 
     function moveCharacter(x, y) {
@@ -114,8 +302,9 @@
       const obj = document.createElement("div");
       obj.className = "falling";
 
+      // 아이콘 선택 반영 (🍓 or 선택된 아이콘)
       const isWatermelon = Math.random() < (Math.random() * 0.05 + 0.05); // 5~10%
-      obj.textContent = isWatermelon ? "🍉" : "🍓";
+      obj.textContent = isWatermelon ? "🍉" : playerIcon; // 기본 딸기 대신 선택된 아이콘 사용
       obj.style.left = `${Math.random() * window.innerWidth}px`;
       obj.style.animationDuration = `${6 - Math.min(5, fallSpeed)}s`;
 
@@ -155,17 +344,22 @@
       clearInterval(objectInterval);
       clearInterval(timerInterval);
       const finalTime = updateTimer();
-      gameOverText.innerHTML = `게임 오버!<br>생존 시간: ${finalTime}초`;
+      gameOverText.innerHTML = `게임 오버!<br>생존 시간: ${finalTime}초<br><br>딸기: ${strawberry}개`;
       gameOverText.style.display = "block";
     }
 
     function startGame() {
       moveCharacter(window.innerWidth / 2, window.innerHeight - 100);
       startTime = Date.now();
+      lastRewardTime = 0;
       gameRunning = true;
       gameOverText.style.display = "none";
       invincible = false;
       fallSpeed = 4;
+      updateStrawberryCount();
+
+      // 플레이어 캐릭터 표시 갱신
+      player.textContent = playerCharacter;
 
       objectInterval = setInterval(() => {
         createObject();
@@ -175,7 +369,149 @@
       timerInterval = setInterval(updateTimer, 1000);
     }
 
+    function saveStrawberry() {
+      localStorage.setItem("strawberry", strawberry);
+    }
+    function savePlayerIcon(icon) {
+      localStorage.setItem("playerIcon", icon);
+    }
+    function savePlayerCharacter(char) {
+      localStorage.setItem("playerCharacter", char);
+    }
+
+    // 상점 아이템 동적 생성
+    const iconItemsContainer = document.getElementById("icon-items");
+    const characterItemsContainer = document.getElementById("character-items");
+
+    function createShopItem(item, type, container) {
+      const div = document.createElement("div");
+      div.className = "shop-item";
+      div.textContent = item.icon;
+      div.title = item.name;
+      if (item.price > 0) {
+        const priceSpan = document.createElement("span");
+        priceSpan.className = "price";
+        priceSpan.textContent = `${item.price}개`;
+        div.appendChild(priceSpan);
+      } else {
+        const priceSpan = document.createElement("span");
+        priceSpan.className = "price";
+        priceSpan.textContent = "무료";
+        div.appendChild(priceSpan);
+      }
+
+      // 현재 선택 표시
+      if (type === "icon" && item.icon === playerIcon) {
+        div.classList.add("selected");
+      } else if (type === "character" && item.icon === playerCharacter) {
+        div.classList.add("selected");
+      }
+
+      // 구매 가능 여부 표시
+      if (item.price > strawberry) {
+        div.classList.add("disabled");
+      }
+
+      div.addEventListener("click", () => {
+        if (div.classList.contains("disabled")) return; // 구매 불가
+
+        if (type === "icon") {
+          if (item.icon === playerIcon) return; // 이미 선택됨
+          if (item.price > 0) {
+            if (confirm(`${item.price} 딸기를 사용해 아이콘을 구매하시겠습니까?`)) {
+              strawberry -= item.price;
+              saveStrawberry();
+              updateStrawberryCount();
+              playerIcon = item.icon;
+              savePlayerIcon(playerIcon);
+              updateShopSelection(type, playerIcon);
+            }
+          } else {
+            // 무료 아이템 바로 선택
+            playerIcon = item.icon;
+            savePlayerIcon(playerIcon);
+            updateShopSelection(type, playerIcon);
+          }
+        } else if (type === "character") {
+          if (item.icon === playerCharacter) return; // 이미 선택됨
+          if (item.price > 0) {
+            if (confirm(`${item.price} 딸기를 사용해 캐릭터를 구매하시겠습니까?`)) {
+              strawberry -= item.price;
+              saveStrawberry();
+              updateStrawberryCount();
+              playerCharacter = item.icon;
+              savePlayerCharacter(playerCharacter);
+              updateShopSelection(type, playerCharacter);
+              player.textContent = playerCharacter; // 즉시 반영
+            }
+          } else {
+            // 무료 아이템 바로 선택
+            playerCharacter = item.icon;
+            savePlayerCharacter(playerCharacter);
+            updateShopSelection(type, playerCharacter);
+            player.textContent = playerCharacter; // 즉시 반영
+          }
+        }
+      });
+
+      container.appendChild(div);
+    }
+
+    function updateShopSelection(type, selectedIcon) {
+      let container;
+      if (type === "icon") container = iconItemsContainer;
+      else container = characterItemsContainer;
+
+      [...container.children].forEach(div => {
+        div.classList.remove("selected");
+        div.classList.remove("disabled");
+
+        const icon = div.firstChild.textContent; // 이모지 텍스트
+
+        // 가격 체크해서 disabled 설정
+        const itemData = (type === "icon" ? iconItemsData : characterItemsData)
+          .find(item => item.icon === icon);
+
+        if (!itemData) return;
+
+        if (icon === selectedIcon) {
+          div.classList.add("selected");
+        }
+
+        if (itemData.price > strawberry) {
+          div.classList.add("disabled");
+        }
+      });
+    }
+
+    // 상점 아이템 초기 생성
+    function initShop() {
+      iconItemsContainer.innerHTML = "";
+      characterItemsContainer.innerHTML = "";
+
+      iconItemsData.forEach(item => createShopItem(item, "icon", iconItemsContainer));
+      characterItemsData.forEach(item => createShopItem(item, "character", characterItemsContainer));
+    }
+
+    shopButton.addEventListener("click", () => {
+      if (gameRunning) {
+        // 게임 중 일시정지 기능 추가 가능 (선택 사항)
+      }
+      initShop();
+      updateShopSelection("icon", playerIcon);
+      updateShopSelection("character", playerCharacter);
+      shopModal.style.display = "block";
+    });
+
+    closeShopBtn.addEventListener("click", () => {
+      shopModal.style.display = "none";
+    });
+
+    // 게임 시작
+    updateStrawberryCount();
+    player.textContent = playerCharacter;
     startGame();
+
   </script>
 </body>
 </html>
