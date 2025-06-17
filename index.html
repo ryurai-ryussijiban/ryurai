@@ -1,115 +1,150 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8">
-  <title>🍓 딸기를 피해라! 🍓 - 라이언니 팬게임</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>딸기를 피해라! - 라이언니 팬게임 🍓</title>
   <style>
     body {
       margin: 0;
+      background-color: pink;
       overflow: hidden;
-      background: pink;
       font-family: sans-serif;
     }
-
-    #chef {
-      position: absolute;
-      font-size: 40px;
-      transition: transform 0.1s;
-      user-select: none;
-      pointer-events: none;
+    #game {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+      background: linear-gradient(to bottom, #ffd6e8, #ffe6f0);
     }
-
+    .player {
+      position: absolute;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 48px;
+    }
     .strawberry {
       position: absolute;
-      font-size: 30px;
-      animation: fall linear;
-      user-select: none;
+      top: -50px;
+      font-size: 36px;
     }
-
-    @keyframes fall {
-      to {
-        transform: translateY(100vh);
-      }
-    }
-
     #game-over {
-      position: fixed;
+      position: absolute;
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
-      font-size: 48px;
-      font-weight: bold;
-      color: white;
+      background: white;
+      padding: 20px 40px;
+      border-radius: 12px;
+      text-align: center;
       display: none;
-      background: rgba(255, 0, 100, 0.7);
-      padding: 30px;
-      border-radius: 20px;
+    }
+    #restart-btn {
+      margin-top: 10px;
+      padding: 10px 20px;
+      border: none;
+      background: hotpink;
+      color: white;
+      font-weight: bold;
+      border-radius: 8px;
+      cursor: pointer;
     }
   </style>
 </head>
 <body>
-  <div id="chef">👩🏻‍🍳</div>
-  <div id="game-over">GAME OVER</div>
+  <div id="game">
+    <div class="player" id="player">👩🏻‍🍳</div>
+    <div id="game-over">
+      <h1>GAME OVER</h1>
+      <button id="restart-btn">다시 시작</button>
+    </div>
+  </div>
 
   <script>
-    const chef = document.getElementById('chef');
-    const gameOverText = document.getElementById('game-over');
+    const game = document.getElementById('game');
+    const player = document.getElementById('player');
+    const gameOverScreen = document.getElementById('game-over');
+    const restartBtn = document.getElementById('restart-btn');
 
-    let gameRunning = true;
+    let playerX = window.innerWidth / 2;
+    const playerWidth = 48; // approx width in px
+    let strawberries = [];
     let speed = 2;
-    let interval = 2000;
-
-    function moveChef(x, y) {
-      chef.style.left = `${x - 20}px`;
-      chef.style.top = `${y - 20}px`;
-    }
-
-    document.addEventListener('mousemove', (e) => moveChef(e.clientX, e.clientY));
-    document.addEventListener('touchmove', (e) => {
-      const touch = e.touches[0];
-      moveChef(touch.clientX, touch.clientY);
-    });
+    let gameOver = false;
 
     function createStrawberry() {
       const strawberry = document.createElement('div');
-      strawberry.className = 'strawberry';
+      strawberry.classList.add('strawberry');
       strawberry.textContent = '🍓';
-      strawberry.style.left = `${Math.random() * window.innerWidth}px`;
-      strawberry.style.top = '-40px';
-      strawberry.style.animationDuration = `${6 - speed}s`;
-      document.body.appendChild(strawberry);
+      strawberry.style.left = Math.random() * (window.innerWidth - 30) + 'px';
+      game.appendChild(strawberry);
+      strawberries.push(strawberry);
+    }
 
-      const checkInterval = setInterval(() => {
-        const rect1 = chef.getBoundingClientRect();
-        const rect2 = strawberry.getBoundingClientRect();
+    function movePlayer(e) {
+      if (e.touches) {
+        playerX = e.touches[0].clientX;
+      } else {
+        playerX = e.clientX;
+      }
+      player.style.left = `${playerX}px`;
+    }
 
-        if (
-          rect1.left < rect2.right &&
-          rect1.right > rect2.left &&
-          rect1.top < rect2.bottom &&
-          rect1.bottom > rect2.top
-        ) {
-          gameRunning = false;
-          gameOverText.style.display = 'block';
-          clearInterval(checkInterval);
-        }
+    function checkCollision(strawberry) {
+      const sRect = strawberry.getBoundingClientRect();
+      const pRect = player.getBoundingClientRect();
+      return !(
+        sRect.bottom < pRect.top ||
+        sRect.top > pRect.bottom ||
+        sRect.right < pRect.left ||
+        sRect.left > pRect.right
+      );
+    }
 
-        if (rect2.top > window.innerHeight) {
-          strawberry.remove();
-          clearInterval(checkInterval);
-        }
-      }, 20);
+    function endGame() {
+      gameOver = true;
+      gameOverScreen.style.display = 'block';
     }
 
     function gameLoop() {
-      if (!gameRunning) return;
-      createStrawberry();
-      setTimeout(gameLoop, interval);
-      if (interval > 500) interval -= 50;
-      if (speed < 5) speed += 0.05;
+      if (gameOver) return;
+
+      strawberries.forEach((strawberry, i) => {
+        let top = parseFloat(strawberry.style.top) || 0;
+        top += speed;
+        strawberry.style.top = top + 'px';
+
+        if (checkCollision(strawberry)) {
+          endGame();
+        }
+
+        if (top > window.innerHeight) {
+          strawberry.remove();
+          strawberries.splice(i, 1);
+        }
+      });
+
+      if (Math.random() < 0.05) {
+        createStrawberry();
+      }
+
+      speed += 0.001; // 점점 빨라짐
+      requestAnimationFrame(gameLoop);
     }
 
-    gameLoop();
+    window.addEventListener('mousemove', movePlayer);
+    window.addEventListener('touchmove', movePlayer);
+    restartBtn.addEventListener('click', () => {
+      strawberries.forEach(s => s.remove());
+      strawberries = [];
+      speed = 2;
+      gameOver = false;
+      gameOverScreen.style.display = 'none';
+      requestAnimationFrame(gameLoop);
+    });
+
+    requestAnimationFrame(gameLoop);
   </script>
 </body>
 </html>
