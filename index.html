@@ -70,17 +70,7 @@
       z-index: 1000;
     }
 
-    #restart-button {
-      margin-top: 15px;
-      background: #ff99bb;
-      color: white;
-      border: none;
-      border-radius: 12px;
-      padding: 8px 16px;
-      font-size: 16px;
-      cursor: pointer;
-    }
-
+    /* 상점 버튼 */
     #shop-button {
       position: absolute;
       top: 10px;
@@ -95,6 +85,7 @@
       z-index: 1000;
     }
 
+    /* 상점 모달 */
     #shop-modal {
       display: none;
       position: fixed;
@@ -187,27 +178,26 @@
     <div id="strawberry-count">🍓: 0</div>
     <button id="shop-button">상점</button>
     <div id="player" class="character">👩🏻‍🍳</div>
-    <div id="game-over">
-      <div id="game-over-text"></div>
-      <button id="restart-button">다시 시작</button>
-    </div>
+    <div id="game-over"></div>
   </div>
 
   <div id="shop-modal">
     <h2>상점</h2>
+
     <div>
       <h3>아이콘</h3>
       <div id="icon-items" class="item-list"></div>
     </div>
+
     <div style="margin-top: 20px;">
       <h3>캐릭터</h3>
       <div id="character-items" class="item-list"></div>
     </div>
+
     <button id="close-shop">닫기</button>
   </div>
 
   <script>
-    const restartButton = document.getElementById("restart-button");
     const game = document.getElementById("game");
     const player = document.getElementById("player");
     const gameOverText = document.getElementById("game-over");
@@ -441,12 +431,6 @@
 
     // 게임 시작
     startGame();
-    restartButton.addEventListener("click", () => {
-      document.querySelectorAll(".falling").forEach(e => e.remove());
-      gameOverText.parentElement.style.display = "none";
-      moveCharacter(window.innerWidth / 2, window.innerHeight / 2);
-      startGame();
-    });
   </script>
 </body>
 </html>
