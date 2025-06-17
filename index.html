@@ -227,7 +227,6 @@
 <script>
 (() => {
   // ====== 데이터 저장 ======
-  // localStorage 키
   const STORAGE_KEYS = {
     USERS: 'ryu_users',
     CURRENT_USER: 'ryu_current_user',
@@ -237,6 +236,33 @@
     POINTS: 'ryu_points',
     NOTICES: 'ryu_notices',
   };
+
+  // ====== UI 요소 찾기 ======
+  const loginSection = document.getElementById('login-section');
+  const signupSection = document.getElementById('signup-section');
+  const profileSection = document.getElementById('profile');
+  const homeSection = document.getElementById('home');
+  const fanSection = document.getElementById('fan');
+  const suggestionsSection = document.getElementById('suggestions');
+  const shopSection = document.getElementById('shop');
+
+  // ✅ 초기화: 페이지 열었을 때 로그인 화면만 보이게
+  window.onload = function () {
+    loginSection.style.display = 'block';
+    signupSection.style.display = 'none';
+    profileSection.style.display = 'none';
+    homeSection.style.display = 'none';
+    fanSection.style.display = 'none';
+    suggestionsSection.style.display = 'none';
+    shopSection.style.display = 'none';
+  };
+
+function loginSuccess() {
+  loginSection.style.display = 'none';
+  signupSection.style.display = 'none';
+  showSection('home');  // 로그인 후 홈 화면 보여줌
+}
+
 
   // 초기 유저 목록 - 매니저/관리자/일반 멤버(가입시 추가)
   let users = JSON.parse(localStorage.getItem(STORAGE_KEYS.USERS)) || [
@@ -381,6 +407,28 @@
       shopSection.classList.add('hidden');
     }
   }
+
+function hideAllSections() {
+  profileSection.style.display = 'none';
+  homeSection.style.display = 'none';
+  fanSection.style.display = 'none';
+  suggestionsSection.style.display = 'none';
+  shopSection.style.display = 'none';
+}
+function showSection(name) {
+  hideAllSections();
+  if (name === 'profile') profileSection.style.display = 'block';
+  else if (name === 'home') homeSection.style.display = 'block';
+  else if (name === 'fan') fanSection.style.display = 'block';
+  else if (name === 'suggestions') suggestionsSection.style.display = 'block';
+  else if (name === 'shop') shopSection.style.display = 'block';
+}
+
+navButtons.profile.addEventListener('click', () => showSection('profile'));
+navButtons.home.addEventListener('click', () => showSection('home'));
+navButtons.fan.addEventListener('click', () => showSection('fan'));
+navButtons.suggestions.addEventListener('click', () => showSection('suggestions'));
+navButtons.shop.addEventListener('click', () => showSection('shop'));
 
   // 탭 표시 전환
   function showSection(section) {
