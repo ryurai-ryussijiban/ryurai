@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>류라이 팬사이트</title>
+<style>
+  /* 기본 스타일, 하단 탭 스타일 */
+  body, html {
+    margin: 0; padding: 0; font-family: "Noto Sans KR", sans-serif;
+    background: #fff0f6; color: #333;
+  }
+  #app {
+    min-height: 100vh;
+    display: flex; flex-direction: column;
+  }
+  header {
+    background: #f8bbd0; padding: 12px; text-align: center; font-weight: 700; font-size: 1.5rem;
+  }
+  main {
+    flex: 1; padding: 10px; overflow-y: auto;
+  }
+  nav {
+    height: 56px;
+    display: flex;
+    background: #f48fb1;
+    border-top: 1px solid #ccc;
+  }
+  nav button {
+    flex: 1;
+    border: none;
+    background: transparent;
+    font-size: 1rem;
+    font-weight: 700;
+    color: white;
+    cursor: pointer;
+    outline: none;
+    transition: background 0.3s;
+  }
+  nav button.active,
+  nav button:hover {
+    background: #ec407a;
+  }
+  input, textarea, select {
+    width: 100%;
+    padding: 8px;
+    margin: 6px 0;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 1rem;
+  }
+  button.primary {
+    background: #ec407a;
+    border: none;
+    color: white;
+    padding: 10px;
+    font-size: 1rem;
+    border-radius: 5px;
+    cursor: pointer;
+  }
+  button.primary:disabled {
+    background: #f8bbd0;
+    cursor: not-allowed;
+  }
+  .hidden {
+    display: none !important;
+  }
+  .letter {
+    background: #fff0f6;
+    border: 1px solid #f48fb1;
+    border-radius: 8px;
+    padding: 12px;
+    margin-bottom: 8px;
+  }
+  .letter .actions {
+    margin-top: 6px;
+  }
+  .letter .actions button {
+    margin-right: 6px;
+  }
+  /* 기타 필요한 스타일은 여기에 */
+</style>
+</head>
+<body>
+<div id="app">
+  <header>류라이 팬사이트</header>
+  <main id="main-content">
+    <!-- 로그인/회원가입/메인 화면이 여기 나타납니다 -->
+  </main>
+  <nav id="tab-bar" class="hidden">
+    <button data-tab="profile" class="active">🌸 프로필</button>
+    <button data-tab="home">🏠 홈</button>
+    <button data-tab="fan">💌 팬</button>
+    <button data-tab="suggestion">🛠 건의</button>
+    <button data-tab="shop">🛍 상점</button>
+  </nav>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
+
+<script>
+  // === Firebase 초기화 ===
+  const firebaseConfig = {
+    apiKey: "YOUR_API_KEY",
+    authDomain: "YOUR_PROJECT.firebaseapp.com",
+    projectId: "YOUR_PROJECT",
+    storageBucket: "YOUR_PROJECT.appspot.com",
+    messagingSenderId: "YOUR_SENDER_ID",
+    appId: "YOUR_APP_ID"
+  };
+  firebase.initializeApp(firebaseConfig);
+  const auth = firebase.auth();
+  const db = firebase.firestore();
+
+  // === 전역 상태 ===
+  let currentUser = null;
+  let currentUserData = null; // 파이어스토어 users 문서 (role 포함)
+  let currentTab = "profile";
+
+  // === DOM 참조 ===
+  const app = document.getElementById("app");
+  const mainContent = document.getElementById("main-content");
+  const tabBar = document.getElementById("tab-bar");
+
+  // === 유틸 함수 ===
+  function setLoading(msg = "로딩 중...") {
+    mainContent.innerHTML = `<p>${msg}</p>`;
+  }
+  function formatDate(ts) {
+    if (!ts) return "-";
+    const d = ts.toDate ? ts.toDate() : new Date(ts);
+    return d.toLocaleString();
+  }
+  function daysUntilSep16() {
+    const now = new Date();
+    let year = now.getFullYear();
+    const sept16 = new Date(year, 8, 16); // 8=9월 (0부터 시작)
+    if (now > sept16) year++;
+    const target = new Date(year, 8, 16);
+    const diff = Math.ceil((target - now) / (1000 * 60 * 60 * 24));
+    return diff;
+  }
+  function copyToClipboard(text) {
+    navigator.clipboard.writeText(text).then(() => alert("복사되었습니다!"));
+  }
+
+  // === 로그인/회원가입 UI ===
+  function renderLogin() {
+    tabBar.classList.add("hidden");
+    mainContent.innerHTML = `
+      <h2>로그인</h2>
+      <input type="email" id="login-email" placeholder="이메일" />
+      <input type="password" id="login-password" placeholder="비밀번호" />
+      <button id="login-btn" class="primary">로그인</button>
+      <p>계정이 없나요? <a href="#" id="to-signup">회원가입</a></p>
+    `;
+
+    document.getElementById("login-btn").onclick = async () => {
+      const email = document.getElementById("login-email").value.trim();
+      const password = document.getElementById("login-password").value;
+      if (!email || !password) {
+        alert("이메일과 비밀번호를 입력해주세요.");
+        return;
+      }
+      setLoading("로그인 중...");
+      try {
+        await auth.signInWithEmailAndPassword(email, password);
+      } catch (e) {
+        alert("로그인 실패: " + e.message);
+        renderLogin();
+      }
+    };
+    document.getElementById("to-signup").onclick = (e) => {
+      e.preventDefault();
+      renderSignUp();
+    };
+  }
+
+  function renderSignUp() {
+    tabBar.classList.add("hidden");
+    mainContent.innerHTML = `
+      <h2>회원가입</h2>
+      <input type="email" id="signup-email" placeholder="이메일" />
+      <input type="password" id="signup-password" placeholder="비밀번호" />
+      <input type="password" id="signup-password-confirm" placeholder="비밀번호 확인" />
+      <button id="signup-btn" class="primary">회원가입</button>
+      <p>이미 계정이 있나요? <a href="#" id="to-login">로그인</a></p>
+    `;
+
+    document.getElementById("signup-btn").onclick = async () => {
+      const email = document.getElementById("signup-email").value.trim();
+      const password = document.getElementById("signup-password").value;
+      const passwordConfirm = document.getElementById("signup-password-confirm").value;
+      if (!email || !password || !passwordConfirm) {
+        alert("모든 항목을 입력해주세요.");
+        return;
+      }
+      if (password !== passwordConfirm) {
+        alert("비밀번호가 일치하지 않습니다.");
+        return;
+      }
+      setLoading("회원가입 중...");
+      try {
+        const userCredential = await auth.createUserWithEmailAndPassword(email, password);
+        // 가입 시점에 role은 "member"로 기본 설정
+        await db.collection("users").doc(userCredential.user.uid).set({
+          email: email,
+          role: "member",
+          nickname: "",
+          intro: "",
+          profileImageUrl: "",
+          lastVisit: firebase.firestore.FieldValue.serverTimestamp(),
+          strawberryPoints: 0,
+        });
+      } catch (e) {
+        alert("회원가입 실패: " + e.message);
+        renderSignUp();
+      }
+    };
+    document.getElementById("to-login").onclick = (e) => {
+      e.preventDefault();
+      renderLogin();
+    };
+  }
+
+  // === 메인 페이지 UI ===
+  function renderMain() {
+    tabBar.classList.remove("hidden");
+    renderTab(currentTab);
+  }
+
+  // === 탭 렌더링 함수 ===
+  async function renderTab(tabName) {
+    currentTab = tabName;
+    // 탭 버튼 활성화 표시
+    [...tabBar.children].forEach((btn) => {
+      btn.classList.toggle("active", btn.dataset.tab === tabName);
+    });
+
+    if (tabName === "profile") {
+      await renderProfileTab();
+    } else if (tabName === "home") {
+      renderHomeTab();
+    } else if (tabName === "fan") {
+      await renderFanTab();
+    } else if (tabName === "suggestion") {
+      await renderSuggestionTab();
+    } else if (tabName === "shop") {
+      await renderShopTab();
+    }
+  }
+
+  // === 프로필 탭 ===
+  async function renderProfileTab() {
+    // DB에서 최신 user data 가져오기
+    const userDoc = await db.collection("users").doc(currentUser.uid).get();
+    currentUserData = userDoc.data();
+
+    mainContent.innerHTML = `
+      <h2>🌸 프로필 꾸미기</h2>
+      <img id="profile-img-preview" src="${currentUserData.profileImageUrl || 'https://via.placeholder.com/120'}" alt="프로필 이미지" width="120" height="120" style="border-radius:50%; object-fit:cover;" />
+      <input type="file" id="profile-img-upload" accept="image/*" />
+      <label>닉네임</label>
+      <input type="text" id="profile-nickname" value="${currentUserData.nickname || ''}" maxlength="20" />
+      <label>소개글</label>
+      <textarea id="profile-intro" rows="3" maxlength="100">${currentUserData.intro || ''}</textarea>
+      <button id="save-profile-btn" class="primary">저장하기</button>
+
+      <hr />
+      <h3>📨 편지 관리</h3>
+      <div id="letters-list">로딩 중...</div>
+
+      <hr />
+      <h3>프로필 공유</h3>
+      <button id="copy-link-btn">프로필 링크 복사</button>
+      <div id="qrcode-container" style="margin-top:10px;"></div>
+
+      <hr />
+      <button id="logout-btn" style="background:#f44336; color:#fff; border:none; padding:10px; border-radius:6px;">로그아웃</button>
+    `;
+
+    // 프로필 이미지 업로드 처리
+    const profileImgInput = document.getElementById("profile-img-upload");
+    profileImgInput.onchange = async (e) => {
+      const file = e.target.files[0];
+      if (!file) return alert("파일을 선택해주세요.");
+      // Firebase Storage 업로드를 여기에 구현 가능 (생략: 실제 서비스용)
+      alert("프로필 이미지 업로드 기능은 개발 중입니다.");
+    };
+
+    // 저장 버튼
+    document.getElementById("save-profile-btn").onclick = async () => {
+      const newNickname = document.getElementById("profile-nickname").value.trim();
+      const newIntro = document.getElementById("profile-intro").value.trim();
+
+      if (newNickname.length === 0) {
+        alert("닉네임을 입력하세요.");
+        return;
+      }
+      // 업데이트
+      await db.collection("users").doc(currentUser.uid).update({
+        nickname: newNickname,
+        intro: newIntro,
+        lastVisit: firebase.firestore.FieldValue.serverTimestamp(),
+      });
+      alert("프로필이 저장되었습니다.");
+      renderProfileTab();
+    };
+
+    // 편지 불러오기 (본인 편지 + 관리자 권한자 열람용)
+    await renderLettersList();
+
+    // 프로필 링크 복사 + QR 코드 생성
+    document.getElementById("copy-link-btn").onclick = () => {
+      const url = `${window.location.origin}/?uid=${currentUser.uid}`;
+      copyToClipboard(url);
+      renderQRCode(url);
+    };
+
+    // 로그아웃
+    document.getElementById("logout-btn").onclick = () => {
+      auth.signOut();
+    };
+  }
+
+  // 편지 리스트 렌더링
+  async function renderLettersList() {
+    const lettersDiv = document.getElementById("letters-list");
+    lettersDiv.innerHTML = "편지를 불러오는 중...";
+
+    let queryRef = db.collection("letters").where("receiverUid", "==", currentUser.uid).orderBy("sentAt", "desc");
+
+    // 관리자 이상이면 모든 편지 조회 가능 (본인 포함)
+    if (currentUserData.role === "admin" || currentUserData.role === "manager") {
+      queryRef = db.collection("letters").orderBy("sentAt", "desc");
+    }
+
+    const snapshot = await queryRef.get();
+    if (snapshot.empty) {
+      lettersDiv.innerHTML = "<p>편지가 없습니다.</p>";
+      return;
+    }
+
+    const lettersHtml = snapshot.docs.map(doc => {
+      const data = doc.data();
+      const from = data.senderNickname || "익명";
+      const content = data.content || "";
+      const dateStr = formatDate(data.sentAt);
+      return `
+        <div class="letter" data-id="${doc.id}">
+          <b>보낸 사람:</b> ${from}<br/>
+          <b>내용:</b> ${content.replace(/\n/g, "<br>")}<br/>
+          <small>날짜: ${dateStr}</small>
+          ${currentUserData.role === "admin" || currentUserData.role === "manager" ? `
+            <div class="actions">
+              <button onclick="deleteLetter('${doc.id}')">삭제</button>
+            </div>
+          ` : ""}
+        </div>
+      `;
+    }).join("");
+    lettersDiv.innerHTML = lettersHtml;
+  }
+
+  // 편지 삭제 (관리자 전용)
+  window.deleteLetter = async (id) => {
+    if (!confirm("정말 편지를 삭제하시겠습니까?")) return;
+    await db.collection("letters").doc(id).delete();
+    alert("편지가 삭제되었습니다.");
+    renderLettersList();
+  };
+
+  // === 홈 탭 ===
+  function renderHomeTab() {
+    const dday = daysUntilSep16();
+    mainContent.innerHTML = `
+      <h2>🏠 홈</h2>
+      <p>다음 페스티벌까지 <strong>${dday}일</strong> 남았습니다!</p>
+      <hr />
+      <h3>공지사항</h3>
+      <p>류라이의 최신 소식과 공지는 여기에 표시됩니다.</p>
+    `;
+  }
+
+  // === 팬 탭 ===
+  async function renderFanTab() {
+    mainContent.innerHTML = `
+      <h2>💌 팬 활동</h2>
+      <h3>편지 보내기</h3>
+      <textarea id="fan-letter-input" rows="4" placeholder="류라이에게 편지를 써보세요!"></textarea>
+      <button id="send-letter-btn" class="primary">편지 보내기</button>
+      <hr />
+      <h3>나의 팬 활동 기록</h3>
+      <div id="fan-letters-list">로딩 중...</div>
+    `;
+
+    document.getElementById("send-letter-btn").onclick = async () => {
+      const content = document.getElementById("fan-letter-input").value.trim();
+      if (content.length === 0) {
+        alert("내용을 입력해주세요.");
+        return;
+      }
+      // 편지 저장
+      await db.collection("letters").add({
+        senderUid: currentUser.uid,
+        senderNickname: currentUserData.nickname || "무명",
+        receiverUid: "류라이_UID", // 류라이의 UID (관리자 계정 UID로 대체)
+        content,
+        sentAt: firebase.firestore.FieldValue.serverTimestamp(),
+      });
+      alert("편지가 전송되었습니다!");
+      document.getElementById("fan-letter-input").value = "";
+      renderFanLettersList();
+    };
+
+    await renderFanLettersList();
+  }
+
+  // 팬이 보낸 편지 기록 보여주기 (본인이 보낸 편지들)
+  async function renderFanLettersList() {
+    const fanLettersDiv = document.getElementById("fan-letters-list");
+    fanLettersDiv.innerHTML = "로딩 중...";
+
+    const snapshot = await db.collection("letters")
+      .where("senderUid", "==", currentUser.uid)
+      .orderBy("sentAt", "desc")
+      .get();
+
+    if (snapshot.empty) {
+      fanLettersDiv.innerHTML = "<p>보낸 편지가 없습니다.</p>";
+      return;
+    }
+
+    const lettersHtml = snapshot.docs.map(doc => {
+      const data = doc.data();
+      const content = data.content || "";
+      const dateStr = formatDate(data.sentAt);
+      return `
+        <div class="letter" data-id="${doc.id}">
+          <b>받는 사람:</b> 류라이<br/>
+          <b>내용:</b> ${content.replace(/\n/g, "<br>")}<br/>
+          <small>날짜: ${dateStr}</small>
+        </div>
+      `;
+    }).join("");
+    fanLettersDiv.innerHTML = lettersHtml;
+  }
+
+  // === 건의 탭 ===
+  async function renderSuggestionTab() {
+    mainContent.innerHTML = `
+      <h2>🛠 건의 및 신고</h2>
+      <textarea id="suggestion-input" rows="4" placeholder="건의사항이나 신고 내용을 작성해주세요."></textarea>
+      <button id="send-suggestion-btn" class="primary">전송하기</button>
+      <hr />
+      <h3>내가 보낸 건의/신고 내역</h3>
+      <div id="my-suggestions-list">로딩 중...</div>
+    `;
+
+    document.getElementById("send-suggestion-btn").onclick = async () => {
+      const content = document.getElementById("suggestion-input").value.trim();
+      if (!content) {
+        alert("내용을 입력해주세요.");
+        return;
+      }
+      await db.collection("suggestions").add({
+        senderUid: currentUser.uid,
+        senderNickname: currentUserData.nickname || "무명",
+        content,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+        handled: false,
+      });
+      alert("건의/신고가 접수되었습니다!");
+      document.getElementById("suggestion-input").value = "";
+      renderMySuggestionsList();
+    };
+
+    await renderMySuggestionsList();
+  }
+
+  async function renderMySuggestionsList() {
+    const listDiv = document.getElementById("my-suggestions-list");
+    const snapshot = await db.collection("suggestions")
+      .where("senderUid", "==", currentUser.uid)
+      .orderBy("createdAt", "desc")
+      .get();
+    if (snapshot.empty) {
+      listDiv.innerHTML = "<p>내역이 없습니다.</p>";
+      return;
+    }
+    const html = snapshot.docs.map(doc => {
+      const data = doc.data();
+      return `<div class="letter">
+        <p>${data.content.replace(/\n/g, "<br>")}</p>
+        <small>${formatDate(data.createdAt)} - 처리 상태: ${data.handled ? "처리됨" : "미처리"}</small>
+      </div>`;
+    }).join("");
+    listDiv.innerHTML = html;
+  }
+
+  // === 상점 탭 ===
+  async function renderShopTab() {
+    mainContent.innerHTML = `
+      <h2>🛍 상점</h2>
+      <p>류라이 굿즈를 소개하는 공간입니다.</p>
+      <ul>
+        <li>굿즈 1 - 가격: 10,000딸기포인트</li>
+        <li>굿즈 2 - 가격: 15,000딸기포인트</li>
+        <li>포토카드 세트 - 가격: 5,000딸기포인트 (한정 수량)</li>
+      </ul>
+      <p><em>아이템 구매 기능은 개발 중입니다.</em></p>
+      <p>현재 보유 딸기포인트: <strong id="strawberry-points">0</strong> 딸기</p>
+    `;
+
+    const spElem = document.getElementById("strawberry-points");
+    spElem.textContent = currentUserData.strawberryPoints || 0;
+  }
+
+  // === QR 코드 생성 함수 ===
+  function renderQRCode(text) {
+    const container = document.getElementById("qrcode-container");
+    container.innerHTML = "";
+    QRCode.toCanvas(text, { width: 128 }, (err, canvas) => {
+      if (err) return;
+      container.appendChild(canvas);
+    });
+  }
+
+  // === 사용자 정보 갱신 ===
+  async function fetchCurrentUserData(uid) {
+    const docSnap = await db.collection("users").doc(uid).get();
+    if (!docSnap.exists) return null;
+    return docSnap.data();
+  }
+
+  // === 탭 버튼 클릭 이벤트 연결 ===
+  tabBar.onclick = (e) => {
+    if (e.target.tagName === "BUTTON") {
+      renderTab(e.target.dataset.tab);
+    }
+  };
+
+  // === Firebase Auth 상태 변화 감지 ===
+  auth.onAuthStateChanged(async (user) => {
+    if (user) {
+      currentUser = user;
+      currentUserData = await fetchCurrentUserData(user.uid);
+      renderMain();
+    } else {
+      currentUser = null;
+      currentUserData = null;
+      renderLogin();
+    }
+  });
+
+</script>
+</body>
+</html>
