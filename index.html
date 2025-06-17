@@ -70,7 +70,17 @@
       z-index: 1000;
     }
 
-    /* 상점 버튼 */
+    #restart-button {
+      margin-top: 15px;
+      background: #ff99bb;
+      color: white;
+      border: none;
+      border-radius: 12px;
+      padding: 8px 16px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
     #shop-button {
       position: absolute;
       top: 10px;
@@ -85,7 +95,6 @@
       z-index: 1000;
     }
 
-    /* 상점 모달 */
     #shop-modal {
       display: none;
       position: fixed;
@@ -179,35 +188,29 @@
     <button id="shop-button">상점</button>
     <div id="player" class="character">👩🏻‍🍳</div>
     <div id="game-over">
-  <div id="game-over-text"></div>
-  <button id="restart-button" style="display:none; margin-top: 15px; font-size: 18px; padding: 8px 16px; border-radius: 8px; cursor: pointer;">
-    다시 시작
-  </button>
-</div>
-
+      <div id="game-over-text"></div>
+      <button id="restart-button">다시 시작</button>
+    </div>
+  </div>
 
   <div id="shop-modal">
     <h2>상점</h2>
-
     <div>
       <h3>아이콘</h3>
       <div id="icon-items" class="item-list"></div>
     </div>
-
     <div style="margin-top: 20px;">
       <h3>캐릭터</h3>
       <div id="character-items" class="item-list"></div>
     </div>
-
     <button id="close-shop">닫기</button>
   </div>
 
   <script>
+    const restartButton = document.getElementById("restart-button");
     const game = document.getElementById("game");
     const player = document.getElementById("player");
-    const gameOverDiv = document.getElementById("game-over");
-const gameOverText = document.getElementById("game-over-text");
-const restartButton = document.getElementById("restart-button");
+    const gameOverText = document.getElementById("game-over");
     const timerDisplay = document.getElementById("timer");
     const strawberryCountDisplay = document.getElementById("strawberry-count");
     const shopButton = document.getElementById("shop-button");
@@ -251,12 +254,12 @@ const restartButton = document.getElementById("restart-button");
       const elapsed = Math.floor((Date.now() - startTime) / 1000);
       const minutes = String(Math.floor(elapsed / 60)).padStart(2, '0');
       const seconds = String(elapsed % 60).padStart(2, '0');
-      timerDisplay.textContent = `${minutes}:${seconds}`;
+      timerDisplay.textContent = ${minutes}:${seconds};
 
       // 딸기 지급 (45초마다 10개)
       if (elapsed > 0 && elapsed % 45 === 0 && !paused) {
         strawberries += 10;
-        strawberryCountDisplay.textContent = `🍓: ${strawberries}`;
+        strawberryCountDisplay.textContent = 🍓: ${strawberries};
         // 잠시 중복 지급 방지 위해 잠깐 pause 처리
         paused = true;
         setTimeout(() => { paused = false; }, 1000);
@@ -265,48 +268,34 @@ const restartButton = document.getElementById("restart-button");
       return elapsed;
     }
 
-  // 캐릭터 이동 (x축만, y축은 화면 맨 아래 고정)
-function moveCharacter(x) {
-  const boundedX = Math.min(Math.max(x, 0), window.innerWidth - player.offsetWidth);
-  const fixedY = window.innerHeight - player.offsetHeight - 10; // 아래서 10px 띄우기 여유
-  player.style.left = `${boundedX}px`;
-  player.style.top = `${fixedY}px`;
-}
+    // 캐릭터 이동 (x축, y축 제한)
+    function moveCharacter(x, y) {
+      const boundedX = Math.min(Math.max(x, 0), window.innerWidth);
+      const boundedY = Math.min(Math.max(y, 0), window.innerHeight);
+      player.style.left = ${boundedX - player.offsetWidth / 2}px;
+      player.style.top = ${boundedY - player.offsetHeight / 2}px;
+    }
 
-document.addEventListener("mousemove", (e) => {
-  if (gameRunning) moveCharacter(e.clientX);
-});
+    document.addEventListener("mousemove", (e) => {
+      if (gameRunning) moveCharacter(e.clientX, e.clientY);
+    });
 
-document.addEventListener("touchmove", (e) => {
-  if (gameRunning && e.touches.length > 0) {
-    moveCharacter(e.touches[0].clientX);
-  }
-}, { passive: false });
+    document.addEventListener("touchmove", (e) => {
+      if (gameRunning && e.touches.length > 0) {
+        moveCharacter(e.touches[0].clientX, e.touches[0].clientY);
+      }
+    }, { passive: false });
 
-// 초기 위치 설정도 x 중앙, y 고정으로 변경
-moveCharacter(window.innerWidth / 2);
-
-    const gameOverDiv = document.getElementById("game-over");
-const gameOverText = document.getElementById("game-over-text");
-const restartButton = document.getElementById("restart-button");
-
-function endGame() {
-  gameRunning = false;
-  clearInterval(objectInterval);
-  clearInterval(timerInterval);
-
-  const finalTime = Math.floor((Date.now() - startTime) / 1000);
-  gameOverText.innerHTML = `게임 오버!<br>생존 시간: ${finalTime}초`;
-  restartButton.style.display = "inline-block";  // 버튼 보이기
-  gameOverDiv.style.display = "block";           // 게임오버창 보이기
-}
-
-restartButton.addEventListener("click", () => {
-  restartButton.style.display = "none";   // 버튼 숨기기
-  gameOverDiv.style.display = "none";     // 게임오버창 숨기기
-  startGame();                            // 게임 재시작
-});
-
+    // 게임 종료 함수
+    function endGame() {
+      gameRunning = false;
+      paused = false;
+      clearInterval(objectInterval);
+      clearInterval(timerInterval);
+      const finalTime = Math.floor((Date.now() - startTime) / 1000);
+      gameOverText.innerHTML = 게임 오버!<br>생존 시간: ${finalTime}초<br>획득 딸기: ${strawberries}개;
+      gameOverText.style.display = "block";
+    }
 
     // 떨어지는 객체 생성
     function createObject() {
@@ -318,10 +307,10 @@ restartButton.addEventListener("click", () => {
       const isWatermelon = Math.random() < (Math.random() * 0.05 + 0.05);
       obj.textContent = isWatermelon ? "🍉" : selectedIcon;
 
-      obj.style.left = `${Math.random() * (window.innerWidth - 30)}px`;
+      obj.style.left = ${Math.random() * (window.innerWidth - 30)}px;
       // 애니메이션 지속시간 = 6 - fallSpeed (최소 1초 보장)
       const duration = Math.max(1, 6 - Math.min(5, fallSpeed));
-      obj.style.animationDuration = `${duration}s`;
+      obj.style.animationDuration = ${duration}s;
 
       game.appendChild(obj);
 
@@ -365,13 +354,12 @@ restartButton.addEventListener("click", () => {
 
     // 게임 시작 초기화 및 반복 객체 생성
     function startGame() {
-      gameOverDiv.style.display = "none";
       startTime = Date.now();
       gameRunning = true;
       invincible = false;
       strawberries = 0;
       fallSpeed = 4;
-      strawberryCountDisplay.textContent = `🍓: 0`;
+      strawberryCountDisplay.textContent = 🍓: 0;
       gameOverText.style.display = "none";
 
       objectInterval = setInterval(() => {
@@ -390,12 +378,12 @@ restartButton.addEventListener("click", () => {
         const div = document.createElement("div");
         div.className = "item";
         if (selectedIcon === item.icon) div.classList.add("selected");
-        div.innerHTML = `<div class="icon">${item.icon}</div><div class="cost">${item.cost} 🍓</div>`;
+        div.innerHTML = <div class="icon">${item.icon}</div><div class="cost">${item.cost} 🍓</div>;
         div.addEventListener("click", () => {
           if (item.cost <= strawberries) {
             strawberries -= item.cost;
             selectedIcon = item.icon;
-            strawberryCountDisplay.textContent = `🍓: ${strawberries}`;
+            strawberryCountDisplay.textContent = 🍓: ${strawberries};
             renderShopItems();
           } else {
             alert("딸기가 부족합니다!");
@@ -410,13 +398,13 @@ restartButton.addEventListener("click", () => {
         const div = document.createElement("div");
         div.className = "item";
         if (selectedCharacter === item.icon) div.classList.add("selected");
-        div.innerHTML = `<div class="icon">${item.icon}</div><div class="cost">${item.cost} 🍓</div>`;
+        div.innerHTML = <div class="icon">${item.icon}</div><div class="cost">${item.cost} 🍓</div>;
         div.addEventListener("click", () => {
           if (item.cost <= strawberries) {
             strawberries -= item.cost;
             selectedCharacter = item.icon;
             player.textContent = selectedCharacter;
-            strawberryCountDisplay.textContent = `🍓: ${strawberries}`;
+            strawberryCountDisplay.textContent = 🍓: ${strawberries};
             renderShopItems();
           } else {
             alert("딸기가 부족합니다!");
@@ -453,6 +441,12 @@ restartButton.addEventListener("click", () => {
 
     // 게임 시작
     startGame();
+    restartButton.addEventListener("click", () => {
+      document.querySelectorAll(".falling").forEach(e => e.remove());
+      gameOverText.parentElement.style.display = "none";
+      moveCharacter(window.innerWidth / 2, window.innerHeight / 2);
+      startGame();
+    });
   </script>
 </body>
 </html>
