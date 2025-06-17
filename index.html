@@ -3,148 +3,165 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>딸기를 피해라! - 라이언니 팬게임 🍓</title>
+  <title>딸기를 피해라!</title>
   <style>
     body {
       margin: 0;
-      background-color: pink;
+      padding: 0;
+      background: pink;
       overflow: hidden;
-      font-family: sans-serif;
+      font-family: 'Arial', sans-serif;
     }
-    #game {
-      position: relative;
+    #gameCanvas {
+      position: absolute;
+      top: 0;
+      left: 0;
       width: 100vw;
       height: 100vh;
-      background: linear-gradient(to bottom, #ffd6e8, #ffe6f0);
+      background-color: #ffe4f2;
     }
-    .player {
-      position: absolute;
-      bottom: 20px;
-      left: 50%;
-      transform: translateX(-50%);
-      font-size: 48px;
-    }
-    .strawberry {
-      position: absolute;
-      top: -50px;
-      font-size: 36px;
-    }
-    #game-over {
+    #gameOver {
       position: absolute;
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
       background: white;
-      padding: 20px 40px;
-      border-radius: 12px;
-      text-align: center;
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.3);
       display: none;
+      text-align: center;
     }
-    #restart-btn {
+    #gameOver button {
       margin-top: 10px;
       padding: 10px 20px;
-      border: none;
       background: hotpink;
+      border: none;
       color: white;
-      font-weight: bold;
-      border-radius: 8px;
-      cursor: pointer;
+      font-size: 16px;
+      border-radius: 5px;
     }
   </style>
 </head>
 <body>
-  <div id="game">
-    <div class="player" id="player">👩🏻‍🍳</div>
-    <div id="game-over">
-      <h1>GAME OVER</h1>
-      <button id="restart-btn">다시 시작</button>
-    </div>
+  <canvas id="gameCanvas"></canvas>
+  <div id="gameOver">
+    <h2>💀 GAME OVER 💀</h2>
+    <p id="timeRecord"></p>
+    <button onclick="startGame()">다시 시작</button>
   </div>
-
   <script>
-    const game = document.getElementById('game');
-    const player = document.getElementById('player');
-    const gameOverScreen = document.getElementById('game-over');
-    const restartBtn = document.getElementById('restart-btn');
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
 
-    let playerX = window.innerWidth / 2;
-    const playerWidth = 48; // approx width in px
-    let strawberries = [];
-    let speed = 2;
+    const player = {
+      x: canvas.width / 2,
+      y: canvas.height - 60,
+      size: 50,
+      speed: 12,
+      isInvincible: false,
+    };
+
+    let fruits = [];
     let gameOver = false;
+    let speed = 4;
+    let timer = 0;
+    let interval;
 
-    function createStrawberry() {
-      const strawberry = document.createElement('div');
-      strawberry.classList.add('strawberry');
-      strawberry.textContent = '🍓';
-      strawberry.style.left = Math.random() * (window.innerWidth - 30) + 'px';
-      game.appendChild(strawberry);
-      strawberries.push(strawberry);
+    const gameOverDiv = document.getElementById("gameOver");
+    const timeRecord = document.getElementById("timeRecord");
+
+    function drawPlayer() {
+      ctx.font = `${player.size}px Arial`;
+      ctx.textAlign = "center";
+      ctx.fillText("👩🏻‍🍳", player.x, player.y);
     }
 
-    function movePlayer(e) {
-      if (e.touches) {
-        playerX = e.touches[0].clientX;
-      } else {
-        playerX = e.clientX;
+    function drawFruits() {
+      fruits.forEach((fruit) => {
+        ctx.font = "40px Arial";
+        ctx.fillText(fruit.type, fruit.x, fruit.y);
+      });
+    }
+
+    function updateFruits() {
+      fruits.forEach((fruit) => (fruit.y += speed));
+      fruits = fruits.filter((fruit) => fruit.y < canvas.height + 40);
+    }
+
+    function createFruit() {
+      const x = Math.random() * (canvas.width - 40) + 20;
+      const isWatermelon = Math.random() < Math.random() * 0.35 + 0.15;
+      const type = isWatermelon ? "🍉" : "🍓";
+      fruits.push({ x, y: -40, type });
+    }
+
+    function detectCollision() {
+      fruits.forEach((fruit) => {
+        const dist = Math.abs(fruit.x - player.x);
+        const yDist = Math.abs(fruit.y - player.y);
+        if (dist < 30 && yDist < 30) {
+          if (fruit.type === "🍓" && !player.isInvincible) {
+            endGame();
+          } else if (fruit.type === "🍉") {
+            player.isInvincible = true;
+            setTimeout(() => player.isInvincible = false, 5000);
+          }
+        }
+      });
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      drawPlayer();
+      drawFruits();
+    }
+
+    function update() {
+      if (!gameOver) {
+        updateFruits();
+        detectCollision();
+        draw();
+        requestAnimationFrame(update);
       }
-      player.style.left = `${playerX}px`;
     }
 
-    function checkCollision(strawberry) {
-      const sRect = strawberry.getBoundingClientRect();
-      const pRect = player.getBoundingClientRect();
-      return !(
-        sRect.bottom < pRect.top ||
-        sRect.top > pRect.bottom ||
-        sRect.right < pRect.left ||
-        sRect.left > pRect.right
-      );
+    function gameLoop() {
+      createFruit();
+      timer += 1;
+      speed += 0.02;
+    }
+
+    function startGame() {
+      player.x = canvas.width / 2;
+      fruits = [];
+      speed = 4;
+      timer = 0;
+      gameOver = false;
+      gameOverDiv.style.display = "none";
+      interval = setInterval(gameLoop, 200);
+      update();
     }
 
     function endGame() {
       gameOver = true;
-      gameOverScreen.style.display = 'block';
+      clearInterval(interval);
+      timeRecord.textContent = `생존 시간: ${(timer / 5).toFixed(1)}초`;
+      gameOverDiv.style.display = "block";
     }
 
-    function gameLoop() {
-      if (gameOver) return;
-
-      strawberries.forEach((strawberry, i) => {
-        let top = parseFloat(strawberry.style.top) || 0;
-        top += speed;
-        strawberry.style.top = top + 'px';
-
-        if (checkCollision(strawberry)) {
-          endGame();
-        }
-
-        if (top > window.innerHeight) {
-          strawberry.remove();
-          strawberries.splice(i, 1);
-        }
-      });
-
-      if (Math.random() < 0.05) {
-        createStrawberry();
-      }
-
-      speed += 0.001;
-      requestAnimationFrame(gameLoop);
+    function movePlayer(e) {
+      const isTouch = e.type.includes("touch");
+      const x = isTouch ? e.touches[0].clientX : e.clientX;
+      player.x = x;
     }
 
-    window.addEventListener('mousemove', movePlayer);
-    window.addEventListener('touchmove', movePlayer);
-    restartBtn.addEventListener('click', () => {
-      strawberries.forEach(s => s.remove());
-      strawberries = [];
-      speed = 2;
-      gameOver = false;
-      gameOverScreen.style.display = 'none';
-      requestAnimationFrame(gameLoop);
-    });
+    window.addEventListener("mousemove", movePlayer);
+    window.addEventListener("touchmove", movePlayer);
 
-    requestAnimationFrame(gameLoop);
+    startGame();
   </script>
 </body>
 </html>
