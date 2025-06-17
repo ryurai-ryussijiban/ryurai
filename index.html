@@ -247,15 +247,15 @@
   const shopSection = document.getElementById('shop');
 
   // ✅ 초기화: 페이지 열었을 때 로그인 화면만 보이게
-  window.onload = function () {
-    loginSection.style.display = 'block';
-    signupSection.style.display = 'none';
-    profileSection.style.display = 'none';
-    homeSection.style.display = 'none';
-    fanSection.style.display = 'none';
-    suggestionsSection.style.display = 'none';
-    shopSection.style.display = 'none';
-  };
+ window.onload = function () {
+  document.getElementById('login-section').style.display = 'block';
+  document.getElementById('signup-section').style.display = 'none';
+  document.getElementById('profile').style.display = 'none';
+  document.getElementById('home').style.display = 'none';
+  document.getElementById('fan').style.display = 'none';
+  document.getElementById('suggestions').style.display = 'none';
+  document.getElementById('shop').style.display = 'none';
+};
 
 function loginSuccess() {
   loginSection.style.display = 'none';
